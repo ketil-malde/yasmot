@@ -32,6 +32,7 @@ from math import exp
 def bbdist1(bb1, bb2, ignorey=False, scale=1): # BBox x BBox -> Float
     """Calculate distance between bboxes, optionally ignoring y position 
        (for stereo pairs), and providing a scale to soften/sharpen the output."""
+    # print(bb1, bb2)
     dx, dy = bb1.x - bb2.x, bb1.y - bb2.y
     dw, dh = bb1.w - bb2.w, bb1.h - bb2.h
     dcls = bb1.cls == bb2.cls
@@ -54,6 +55,7 @@ def bbdist_stereo(bb1, bb2):
     return bbdist1(bb1, bb2, ignorey = True)
 
 def tdist(track, bbox): # Track x BBpairs
+    """Distance between a track (last bbox) a set of bboxes)"""
     return bbdist1(track.bbpairs[-1], bbox)
 
 from scipy.optimize import linear_sum_assignment

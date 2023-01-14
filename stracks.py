@@ -44,12 +44,15 @@ import sys
 
 # what if one frame is missing?
 def zip_frames(lists):
-    print(type(lists))
+    """Merge lists of frames, assumed to be named in lexically increasing order"""
+    cur = ''
     results = []
     while not all([t == [] for t in lists]):
         heads = [l[0] for l in lists if l != []]
         tails = [l[1:] if l != [] else [] for l in lists]
         myframe = min([h.frameid for h in heads])
+        assert cur < myframe, 'Error: frames not in lecially increasing order'
+        cur = myframe
         res = []
         for i in range(len(lists)):
             if heads[i].frameid == myframe:
@@ -153,6 +156,7 @@ if __name__ == '__main__':
     elif args.stereo:
         if len(args.FILES) != 2:
             print(f'Error: Wrong number of files {len(args.FILES)} instead of 2.')
+            sys.exit(-1)
         else:
             fs = [read_frames(f) for f in args.FILES]
             res1 = stereo(fs)
