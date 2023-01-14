@@ -153,10 +153,20 @@ if __name__ == '__main__':
         fs = [read_frames(f) for f in args.FILES]
         res1 = simple_consensus(fs)
         # output and/or do tracking
-    if args.track:
-            pass
+    else:
+        if len(args.FILES) > 1:
+            print(f'Error: Too many files, consider -s or -c')
+            sys.exit(-1)
+        res1 = read_frames(args.FILES[0])
 
-    for x in res1:
-        print('***',x)
+    if args.track:
+        print(res1[0:3])
+        ts = track(res1)
+        pass
+
+    for x in ts:
+        print('Track:')
+        for b in x.bbpairs:
+            print('   ',b)
 
 

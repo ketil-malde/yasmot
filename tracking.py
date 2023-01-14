@@ -85,27 +85,35 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
     
 # NB! Modifies tracks parameter (append)
 # Might use bbmatch above for its guts?
-def tmatch(tracks, bpairs): # [Track] x [BPairs]
+def tmatch(bbs, tracks, old_tracks):
     '''Use Hungarian alg to match tracks and bboxes'''
-    tmx = np.empty((len(tracks), len(bpairs)))
+    tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         # print('***** track=',t, '\n ->', tracks[t].bbpairs[-1])
-        for b in range(len(bpairs)):
-            s = tdist(tracks[t], bpairs[b])
-            # print(bpairs[b])
+        for b in range(len(bbs)):
+            s = tdist(tracks[t], bbs[b])
             # print('  match track=', t, 'bbox=', b, 'score=', s)
+            # print(bpairs[b])
             tmx[t,b] = -s # tdist(tracks[t], bpairs[b])
     tind, bind = linear_sum_assignment(tmx)
     # append b[bind] to t[tind] for index pairs
     for i in range(len(tind)):
-        tracks[tind[i]].bbpairs.append(bpairs[bind[i]])
+        tracks[tind[i]].bbpairs.append(bbs[bind[i]])
 
-    # # what to do with remaining tracks/bboxes?                   
-    for i in range(len(tracks)):
-        # i not in tind: end track?
-        pass
-    for i in range(len(bpairs)):
-        # b not in bind: new track? search (and interpolate) old tracks?
+    # process the unmatched tracks
+    for i in range(len(tracks))[::-1]:
+        if i not in tind:
+            # maybe...something?
+            # else move to old tracks
+            old_tracks.insert(0, tracks.pop(i))
+
+    # process the unmatched bboxes
+    for i in range(len(bbs)):
+        if i not in bind:
+            # todo: eliminate if too much IoU (double predictions)
+            # todo: else search old tracks to rejuvenate
+            # else create new track
+            tracks.append(Track([bbs[i]]))
         pass
 
     return
