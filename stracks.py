@@ -132,8 +132,15 @@ def stereo(framelist): # :: Frame x Frame -> Frame of BBpairs
         res.append(merge_frames(t))
     return res
 
-def track():
-    pass
+from tracking import tmatch
+
+def track(frames):
+    # only single here
+    tracks = []
+    old_tracks = []
+    for f in frames:
+        tmatch(f.bboxes, tracks, old_tracks) # match bboxes to tracks (tmatch)
+    return tracks+old_tracks # sorted by time?
 
 from parser import read_frames
 
