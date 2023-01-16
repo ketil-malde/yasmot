@@ -171,9 +171,9 @@ if __name__ == '__main__':
         res1 = read_frames(args.FILES[0])
 
     if args.track:
-        print(res1[0:3])
         ts = track(res1)
-        pass
+        def firstframe(t): return t.bbpairs[0].frameid
+        ts.sort(key=firstframe)
 
     for x in ts:
         print('Track:')
