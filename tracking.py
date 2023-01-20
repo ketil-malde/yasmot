@@ -89,6 +89,9 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
 # Might use bbmatch above for its guts?
 def tmatch(bbs, tracks, old_tracks):
     '''Use Hungarian alg to match tracks and bboxes'''
+    iou_merge_threshold = -0.8
+    append_threshold    = -0.1
+
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         # print('***** track=',t, '\n ->', tracks[t].bbpairs[-1])
@@ -98,8 +101,10 @@ def tmatch(bbs, tracks, old_tracks):
             # print(bpairs[b])
             tmx[t,b] = -s # tdist(tracks[t], bpairs[b])
     tind, bind = linear_sum_assignment(tmx)
+
     # append b[bind] to t[tind] for index pairs
     for i in range(len(tind)):
+        # todo: use a threshold
         tracks[tind[i]].bbpairs.append(bbs[bind[i]])
 
     # process the unmatched tracks
@@ -113,11 +118,12 @@ def tmatch(bbs, tracks, old_tracks):
     for i in range(len(bbs)):
         if i not in bind:
             # todo: eliminate if too much IoU (double predictions)
-            # todo: else search old tracks to rejuvenate
-            # else create new track
-            tracks.append(Track([bbs[i]]))
-        pass
-
+            if len(tmx[:,i]) > 0 and min(tmx[:,i]) < iou_merge_threshold:
+                pass
+            else:
+                # todo: else search old tracks to rejuvenate
+                # else create new track
+                tracks.append(Track([bbs[i]]))
     return
 
 # Output:
