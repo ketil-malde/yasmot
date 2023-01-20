@@ -14,7 +14,9 @@ def tobbx_yolo(fn, l):
 def parse_yolodir(dirname):
     fs = []
     # for all files in dir,
-    for f in listdir(dirname):
+    files = listdir(dirname)
+    files.sort()
+    for f in files:
         with open(dirname+'/'+f, 'r') as fp:
             bs = [ tobbx_yolo(f, l) for l in fp.readlines() ]
         fs.append(Frame(frameid=f, bboxes=bs))
