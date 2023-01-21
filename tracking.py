@@ -66,13 +66,13 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
     mx = np.empty((len(f1), len(f2)))
     for a in range(len(f1)):
         for b in range(len(f2)):
-            mx[a,b] = -metric(f1[a], f2[b])
-    aind, bind = linear_sum_assignment(mx)
+            mx[a,b] = metric(f1[a], f2[b])
+    aind, bind = linear_sum_assignment(mx, maximize=True)
     # print(aind, bind)
     res = []
     # todo: filter on threshold
     for i in range(len(aind)):
-        if -mx[aind[i],bind[i]] > threshold:
+        if mx[aind[i],bind[i]] > threshold:
             res.append( (f1[aind[i]],f2[bind[i]]) )
         else:
             res.append( (f1[aind[i]], None) )
@@ -89,8 +89,8 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
 # Might use bbmatch above for its guts?
 def tmatch(bbs, tracks, old_tracks):
     '''Use Hungarian alg to match tracks and bboxes'''
-    iou_merge_threshold = -0.8
-    append_threshold    = -0.1
+    iou_merge_threshold = 0.8
+    append_threshold    = 0.1
 
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
@@ -99,31 +99,41 @@ def tmatch(bbs, tracks, old_tracks):
             s = tdist(tracks[t], bbs[b])
             # print('  match track=', t, 'bbox=', b, 'score=', s)
             # print(bpairs[b])
-            tmx[t,b] = -s # tdist(tracks[t], bpairs[b])
-    tind, bind = linear_sum_assignment(tmx)
+            tmx[t,b] = s
+    tind, bind = linear_sum_assignment(tmx, maximize=True)
 
     # append b[bind] to t[tind] for index pairs
+    new_tracks = []
     for i in range(len(tind)):
-        # todo: use a threshold
-        tracks[tind[i]].bbpairs.append(bbs[bind[i]])
+        if tmx[tind[i],bind[i]] > append_threshold:
+            print('***', tind)
+            tracks[tind[i]].bbpairs.append(bbs[bind[i]])
+        elif max(tmx[:,i]) < iou_merge_threshold:
+            # doesn't match an existing track either
+            # todo: probably search old tracks first?
+            new_tracks.append(Track([bbs[i]]))
+        else:
+            print('*** lost:', Track[bbs[i]])
 
-    # process the unmatched tracks
+    # process the unmatched tracks, push to old_tracks
     for i in range(len(tracks))[::-1]:
+        print(' --- ', i, tind)
         if i not in tind:
-            # maybe...something?
-            # else move to old tracks
             old_tracks.insert(0, tracks.pop(i))
 
     # process the unmatched bboxes
     for i in range(len(bbs)):
         if i not in bind:
             # todo: eliminate if too much IoU (double predictions)
-            if len(tmx[:,i]) > 0 and min(tmx[:,i]) < iou_merge_threshold:
+            if len(tmx[:,i]) > 0 and max(tmx[:,i]) > iou_merge_threshold:
                 pass
             else:
                 # todo: else search old tracks to rejuvenate
                 # else create new track
                 tracks.append(Track([bbs[i]]))
+
+    for t in new_tracks:
+        tracks.append(t)
     return
 
 # Output:
