@@ -113,6 +113,7 @@ def tmatch(bbs, tracks, old_tracks):
     '''Use Hungarian alg to match tracks and bboxes'''
     iou_merge_threshold = 0.8
     append_threshold    = 0.1
+    old_track_limit     = 5
 
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
@@ -161,8 +162,16 @@ def tmatch(bbs, tracks, old_tracks):
         new_tracks.insert(0,consensus(tmp_tracks))
                 
     for t in new_tracks:
-        # todo: search old_tracks for matches to join
-        tracks.append(Track([t]))
+        # todo: limit in real time (number of frames)
+        appended = False
+        for j, u in enumerate(old_tracks[:old_track_limit]):
+            if tdist(old_tracks[j], t) > append_threshold:
+                new = old_tracks.pop(j)
+                new.bbpairs.append(t)
+                tracks.append(new)
+                appended = True
+                break
+        if appended == False: tracks.append(Track([t]))
     return
 
 # Output:

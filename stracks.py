@@ -64,11 +64,10 @@ def zip_frames(lists):
         lists = tails
     return results
 
-
 def simple_consensus(framelist, frameindex=None): # :: [Frame] -> (Frame, extra data)
     """Build a consensus annotation for a set of frames"""
     # merge input lists (one frame from each?)
-    def consensus(bbpair,i):
+    def consensus(bbpair,i):  # todo: use tracking.consensus instead?
         """Merge two bboxes"""
         bb1, bb2 = bbpair
         if bb1 is None:  return bb2
