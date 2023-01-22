@@ -84,7 +84,29 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
 
     # todo: add assertion that all inputs are outputs once?
     return res
-    
+
+from definitions import BBox
+
+def consensus(bbs):
+    def avg(ls): return sum(ls)/len(ls)
+    fid = bbs[0].frameid
+    x = avg([b.x for b in bbs])
+    y = avg([b.y for b in bbs])
+    w = avg([b.w for b in bbs])
+    h = avg([b.h for b in bbs])
+
+    # todo: how to calculate class and prob?
+    probs = {}
+    for b in bbs: probs[b.cls] = []
+    for b in bbs: probs[b.cls].append(b.pr)
+    ps = []
+    for c in probs:
+        ps.append((sum(probs[c]), c))
+    ps.sort()
+    p, cl = ps[-1]
+    return BBox(fid,x,y,w,h,cl,p)
+
+
 # NB! Modifies tracks parameter (append)
 # Might use bbmatch above for its guts?
 def tmatch(bbs, tracks, old_tracks):
@@ -106,34 +128,41 @@ def tmatch(bbs, tracks, old_tracks):
     new_tracks = []
     for i in range(len(tind)):
         if tmx[tind[i],bind[i]] > append_threshold:
-            print('***', tind)
+            # good match, add to the track
             tracks[tind[i]].bbpairs.append(bbs[bind[i]])
         elif max(tmx[:,i]) < iou_merge_threshold:
-            # doesn't match an existing track either
-            # todo: probably search old tracks first?
-            new_tracks.append(Track([bbs[i]]))
+            # doesn't match any existing track
+            new_tracks.append(bbs[bind[i]])
         else:
+            # duplicate of a track
             print('*** lost:', Track[bbs[i]])
 
     # process the unmatched tracks, push to old_tracks
     for i in range(len(tracks))[::-1]:
-        print(' --- ', i, tind)
         if i not in tind:
             old_tracks.insert(0, tracks.pop(i))
 
-    # process the unmatched bboxes
+    # process unmatched bboxes
     for i in range(len(bbs)):
         if i not in bind:
             # todo: eliminate if too much IoU (double predictions)
             if len(tmx[:,i]) > 0 and max(tmx[:,i]) > iou_merge_threshold:
+                # todo: make consensus annotation here?
                 pass
             else:
-                # todo: else search old tracks to rejuvenate
-                # else create new track
-                tracks.append(Track([bbs[i]]))
+                new_tracks.append(bbs[i])
 
+    # merge duplicate bboxes
+    for i, t in enumerate(new_tracks):
+        dupidx = [j for j in range(i,len(new_tracks)) if bbdist1(t,new_tracks[j]) > iou_merge_threshold ]
+        tmp_tracks = []
+        for j in dupidx[::-1]:
+            tmp_tracks.append(new_tracks.pop(j))
+        new_tracks.insert(0,consensus(tmp_tracks))
+                
     for t in new_tracks:
-        tracks.append(t)
+        # todo: search old_tracks for matches to join
+        tracks.append(Track([t]))
     return
 
 # Output:
