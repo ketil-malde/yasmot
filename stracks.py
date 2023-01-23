@@ -150,6 +150,51 @@ def track(frames):
         tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
     return tracks+old_tracks # sorted by time?
 
+def process_tracks(tracks, interpolate=False, incrementpattern=None):
+    # assumption: tracks sorted by first frameid
+    # if incrementpatternm: interpolate by +1
+    frames = []
+    cur = []     # [[BBox]]
+    tnum = 0
+    tstats = {}
+    for t in tracks:
+        curframe = t.bbpairs[0].frameid
+
+        # output all frames from cur until caught up
+        def first(c): return c[0].frameid
+        if cur != []:
+            myfid = min([first(c) for c in cur])
+            while myfid < curframe:
+                # select out all myfids and build frame
+                mybbs = [c[0] for c in cur if first(c) == myfid]
+                frames.append(Frame(frameid=myfid, bboxes=mybbs))
+                # purge myfids from cur
+                c0 = [c[1:] for c in cur if first(c) == myfid]
+                rest = [c for c in cur if first(c) != myfid]
+                cur = [c for c in c0 + rest if c != []]
+                if cur == []: break
+                myfid = min([first(c) for c in cur])
+
+        def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
+        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs]) # todo: make cls be tnum here!
+        tstats[tnum] = {}
+        for b in t.bbpairs: tstats[tnum][b.cls] = []
+        for b in t.bbpairs: tstats[tnum][b.cls].append(b.pr)
+        # how to summarize this?
+        tnum += 1
+
+    # process rest of cur (copy from above)
+    while cur != []:
+        myfid = min([first(c) for c in cur])
+        mybbs = [c[0] for c in cur if first(c) == myfid]
+        frames.append(Frame(frameid=myfid, bboxes=mybbs))
+        # purge myfids from cur
+        c0 = [c[1:] for c in cur if first(c) == myfid]
+        rest = [c for c in cur if first(c) != myfid]
+        cur = [c for c in c0 + rest if c != []]
+
+    return frames, tstats
+
 def strack(frames):
     """Track paired bboxes from a stereo camera"""
     pass
@@ -181,13 +226,30 @@ if __name__ == '__main__':
         res1 = read_frames(args.FILES[0])
 
     if args.track:
+        # todo: if pattern/enumeration is given, insert empty frames
         ts = track(res1)
+
         def firstframe(t): return t.bbpairs[0].frameid
         ts.sort(key=firstframe)
 
-    for x in ts:
-        print('Track:')
-        for b in x.bbpairs:
-            print('   ',b)
+        # interpolate dummy detections in tracks
+        # maybe split up if too long gaps?
 
+        for x in ts:
+            print('Track:')
+            for b in x.bbpairs:
+                print('   ',b)
+        print()
+
+        fs, ss = process_tracks(ts)
+        for f in fs:
+            for b in f.bboxes:
+                print('  ',b)
+        for s in ss:
+            print('Track:', s, ss[s])
+
+    else:
+        # just output res1 (::[Frame])
+        for x in res1:
+            print(x)
 
