@@ -29,9 +29,14 @@ def make_args_parser():
         help="""Output consensus annotation per image.""")
     parser.add_argument('--stereo', '-s', action='store_const', default=False, const=True,
         help="""Process stereo images.""")
+
+    # Tracking
     parser.add_argument('--track', default='True', type=bool_flag,
         help="""Generate tracks from video frames or seuqential stills.""")
-
+    parser.add_argument('--max_age', '-m', default=None, type=int,
+                        help="""Maximum age to search for old tracks to resurrect.""")
+    parser.add_argument('--time_pattern', '-t', default='{}', type=str,
+                        help="""Pattern to extract time from frame ID.""")
     parser.add_argument('--output', default="stracks.out", type=str, help="""Output file or directory""")
 
     parser.add_argument('FILES', metavar='FILES', type=str, nargs='*',
@@ -137,17 +142,23 @@ def stereo(framelist): # :: Frame x Frame -> Frame of BBpairs
 from tracking import tmatch
 
 def track(frames):
-    # only single here
+    """Track single cam frames."""
     tracks = []
     old_tracks = []
     for f in frames:
-        tmatch(f.bboxes, tracks, old_tracks) # match bboxes to tracks (tmatch)
+        print(f.frameid)
+        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
     return tracks+old_tracks # sorted by time?
+
+def strack(frames):
+    """Track paired bboxes from a stereo camera"""
+    pass
 
 from parser import read_frames
 
 if __name__ == '__main__':
     parser = make_args_parser()
+    global args
     args = parser.parse_args()
     if args.consensus and args.stereo:
         print('Error: Unsupported combination of arguments:')

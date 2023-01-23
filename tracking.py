@@ -106,10 +106,11 @@ def consensus(bbs):
     p, cl = ps[-1]
     return BBox(fid,x,y,w,h,cl,p)
 
+from parse import parse
 
 # NB! Modifies tracks parameter (append)
 # Might use bbmatch above for its guts?
-def tmatch(bbs, tracks, old_tracks):
+def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
     '''Use Hungarian alg to match tracks and bboxes'''
     iou_merge_threshold = 0.8
     append_threshold    = 0.1
@@ -163,8 +164,14 @@ def tmatch(bbs, tracks, old_tracks):
                 
     for t in new_tracks:
         # todo: limit in real time (number of frames)
+        if max_age is not None:
+            def extime(frid): return(int(parse(time_pattern,frid)[0]))
+            ot_lim = len([o for o in old_tracks[:old_track_limit] if extime(t.frameid) - extime(o.bbpairs[-1].frameid) < max_age])
+        else:
+            ot_lim = old_track_limit
+
         appended = False
-        for j, u in enumerate(old_tracks[:old_track_limit]):
+        for j, u in enumerate(old_tracks[:ot_lim]):
             if tdist(old_tracks[j], t) > append_threshold:
                 new = old_tracks.pop(j)
                 new.bbpairs.append(t)
