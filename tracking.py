@@ -181,9 +181,40 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
         if appended == False: tracks.append(Track([t]))
     return
 
-# Output:
-# tracks.txt: trackid class [BBPair]
-# incorrectly labeled frames (by confidence?)
+from math import log
+
+def summarize_probs(assoc):
+    """From an assoc array of id -> class -> [probs], calculate consensus prob"""
+    # should probably take into account autoregressive properties and whatnot, but...
+    # and use sum of logs rather than products for numerical stability, maybe
+    res = {}
+    num = len(assoc)
+    other = 0  # maintain an "other" category
+    for cl in assoc:
+        res[cl] = 0
+    # for each prob p:
+    #   multiply the corresponding res with p
+    #   multipy all other classes plus the 'other' class with (1-p)/n
+    for cl in assoc:
+        # print('- ', cl,assoc[cl])
+        for r in res:
+            for p in assoc[cl]:
+                if cl==r:
+                    res[r] += log(p)
+                else:
+                    res[r] += log((1.0-p)/num)
+                other      += log((1.0-p)/num)
+    # return max class and prob
+    cur = None
+    maxlogit = -999999999
+    for r in res:
+        if res[r] > maxlogit: # remember the best
+            cur = r
+            maxlogit = res[r]
+    totp = 0
+    for r in res:
+        totp += exp(res[r]-maxlogit)
+    return cur, 1/totp, res
 
 def test():
     # read two annotation files

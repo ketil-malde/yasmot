@@ -146,7 +146,7 @@ def track(frames):
     tracks = []
     old_tracks = []
     for f in frames:
-        print(f.frameid)
+        # print(f.frameid)
         tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
     return tracks+old_tracks # sorted by time?
 
@@ -200,6 +200,8 @@ def strack(frames):
     pass
 
 from parser import read_frames
+from tracking import summarize_probs
+from definitions import bbshow
 
 if __name__ == '__main__':
     parser = make_args_parser()
@@ -232,21 +234,23 @@ if __name__ == '__main__':
         def firstframe(t): return t.bbpairs[0].frameid
         ts.sort(key=firstframe)
 
-        # interpolate dummy detections in tracks
+        # todo: interpolate dummy detections in tracks
         # maybe split up if too long gaps?
-
-        for x in ts:
-            print('Track:')
-            for b in x.bbpairs:
-                print('   ',b)
-        print()
+        # maybe eliminate very short tracks?
+        if True:
+            for x in ts:
+                print('Track:')
+                for b in x.bbpairs:
+                    print(bbshow(b))
+                print()
 
         fs, ss = process_tracks(ts)
         for f in fs:
             for b in f.bboxes:
-                print('  ',b)
+                print(bbshow(b))
         for s in ss:
-            print('Track:', s, ss[s])
+            cls,prb,res = summarize_probs(ss[s])
+            print(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
     else:
         # just output res1 (::[Frame])
