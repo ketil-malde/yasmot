@@ -129,39 +129,38 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
     # append b[bind] to t[tind] for index pairs
     new_tracks = []
     for i in range(len(tind)):
-        if tmx[tind[i],bind[i]] > append_threshold:
+        tix, bix = tind[i], bind[i]
+        if tmx[tix, bix] > append_threshold:
             # good match, add to the track
-            tracks[tind[i]].bbpairs.append(bbs[bind[i]])
-        elif max(tmx[:,bind[i]]) < iou_merge_threshold:
+            tracks[tix].bbpairs.append(bbs[bix])
+        elif max(tmx[:,bix]) < iou_merge_threshold:
             # doesn't match any existing track
-            new_tracks.append(bbs[bind[i]])
+            new_tracks.append(bbs[bix])
         else:
             # duplicate of a track
-            print('*** lost, p=', max(tmx[:,bind[i]])) # todo which track is max index here?
-            print(bbs[bind[i]])
+            # print('*** duplicate, p=', max(tmx[:,bind[i]])) # todo which track is max index here?
             best = None
             prob = 0
             for j in range(len(tind)):
-                if tmx[tind[j],bind[i]] > prob:
-                    prob = tmx[tind[j],bind[i]]
+                if tmx[tind[j], bix] > prob:
+                    prob = tmx[tind[j], bix]
                     best = j
-            print(tracks[j].bbpairs[-1], prob)
-            print(tmx[tind[j], bind[i]])
+            # print('ignoring:\n  ',bbs[bix],"\nbecause of\n",tracks[best].bbpairs[-1],'\np=',prob)
 
     # process the unmatched tracks, push to old_tracks
-    for i in range(len(tracks))[::-1]:
-        if i not in tind:
-            old_tracks.insert(0, tracks.pop(i))
+    for j in range(len(tracks))[::-1]:
+        if j not in tind:
+            old_tracks.insert(0, tracks.pop(j))
 
     # process unmatched bboxes
-    for i in range(len(bbs)):
-        if i not in bind:
+    for k in range(len(bbs)):
+        if k not in bind:
             # todo: eliminate if too much IoU (double predictions)
-            if len(tmx[:,i]) > 0 and max(tmx[:,i]) > iou_merge_threshold:
+            if len(tmx[:,k]) > 0 and max(tmx[:,k]) > iou_merge_threshold:
                 # todo: make consensus annotation here?
                 pass
             else:
-                new_tracks.append(bbs[i])
+                new_tracks.append(bbs[k])
 
     # merge duplicate bboxes
     for i, t in enumerate(new_tracks):
