@@ -252,8 +252,12 @@ if __name__ == '__main__':
             cls,prb,res = summarize_probs(ss[s])
             print(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
-    else:
+    else: # not tracking
         # just output res1 (::[Frame])
         for x in res1:
-            print(x)
+            for a,b in x.bboxes: # assuming -s here?
+                astr = bbshow(a) if a is not None else '-\t'*6+'-'
+                bstr = bbshow(b) if b is not None else '-\t'*6+'-'
+                dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
+                print(astr+"\t"+bstr+"\t"+dist)
 
