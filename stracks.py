@@ -255,9 +255,10 @@ if __name__ == '__main__':
     else: # not tracking
         # just output res1 (::[Frame])
         for x in res1:
+            dashes = '-\t'*6+'-'
             for a,b in x.bboxes: # assuming -s here?
-                astr = bbshow(a) if a is not None else '-\t'*6+'-'
-                bstr = bbshow(b) if b is not None else '-\t'*6+'-'
+                astr = bbshow(a) if a is not None else dashes
+                bstr = bbshow(b) if b is not None else dashes
                 dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
                 print(astr+"\t"+bstr+"\t"+dist)
 
