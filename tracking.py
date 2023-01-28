@@ -132,12 +132,21 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
         if tmx[tind[i],bind[i]] > append_threshold:
             # good match, add to the track
             tracks[tind[i]].bbpairs.append(bbs[bind[i]])
-        elif max(tmx[:,i]) < iou_merge_threshold:
+        elif max(tmx[:,bind[i]]) < iou_merge_threshold:
             # doesn't match any existing track
             new_tracks.append(bbs[bind[i]])
         else:
             # duplicate of a track
-            print('*** lost:', Track[bbs[i]])
+            print('*** lost, p=', max(tmx[:,bind[i]])) # todo which track is max index here?
+            print(bbs[bind[i]])
+            best = None
+            prob = 0
+            for j in range(len(tind)):
+                if tmx[tind[j],bind[i]] > prob:
+                    prob = tmx[tind[j],bind[i]]
+                    best = j
+            print(tracks[j].bbpairs[-1], prob)
+            print(tmx[tind[j], bind[i]])
 
     # process the unmatched tracks, push to old_tracks
     for i in range(len(tracks))[::-1]:
