@@ -53,13 +53,16 @@ def zip_frames(lists):
     cur = ''
     results = []
     while not all([t == [] for t in lists]):
-        heads = [l[0] for l in lists if l != []]
+        heads = [l[0] if l != [] else None for l in lists ]
         tails = [l[1:] if l != [] else [] for l in lists]
-        myframe = min([h.frameid for h in heads])
+        myframe = min([h.frameid for h in heads if h is not None])
         assert cur < myframe, 'Error: frames not in lecially increasing order'
         cur = myframe
         res = []
-        for i in range(len(lists)):
+
+        for i in range(len(heads)):
+            if heads[i] is None:
+                continue
             if heads[i].frameid == myframe:
                 res.append(heads[i])
             else:
@@ -252,7 +255,7 @@ if __name__ == '__main__':
             cls,prb,res = summarize_probs(ss[s])
             print(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
-    else: # not tracking
+    elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
         for x in res1:
             dashes = '-\t'*6+'-'
