@@ -264,4 +264,6 @@ if __name__ == '__main__':
                 bstr = bbshow(b) if b is not None else dashes
                 dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
                 print(astr+"\t"+bstr+"\t"+dist)
-
+    else:
+        for x in res1:
+            print(x)
