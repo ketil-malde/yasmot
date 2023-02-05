@@ -61,3 +61,17 @@ def read_frames(fn):
         return parse_yolodir(fn)
     else: # retinanet
         return parse_retina(fn)
+
+def show_frames(fs):
+    for f in fs:
+        print('Frame:', f.frameid)
+        for b in f.bboxes:
+            print(bbshow(b))
+
+# Testing
+import sys
+from definitions import bbshow
+
+if __name__ == "__main__":
+    fs = read_frames(sys.argv[1])
+    show_frames(fs)

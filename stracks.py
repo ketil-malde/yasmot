@@ -203,7 +203,7 @@ def strack(frames):
     """Track paired bboxes from a stereo camera"""
     pass
 
-from parser import read_frames
+from parser import read_frames, show_frames
 from tracking import summarize_probs
 from definitions import bbshow
 
@@ -266,5 +266,4 @@ if __name__ == '__main__':
                 dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
                 print(astr+"\t"+bstr+"\t"+dist)
     else:
-        for x in res1:
-            print(x)
+        show_frames(res1)
