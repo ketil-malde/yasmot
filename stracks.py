@@ -1,12 +1,12 @@
 # Main program
 
 # Usage:
-#  -C, --consensus
-#    Output consensus annotation per image
-#  -S, --stereo
+#  -c, --consensus
+#    Generate consensus annotation per image
+#  -s, --stereo
 #    Match detections in stereo pairs
-#  -T, --track
-#    Output tracks from video frames/sequential stills
+#  -t, --track=True/False
+#    Extract tracks from video frames/sequential stills
 
 import argparse
 
@@ -153,9 +153,10 @@ def track(frames):
         tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
     return tracks+old_tracks # sorted by time?
 
-def process_tracks(tracks, interpolate=False, incrementpattern=None):
+def process_tracks(tracks, interpolate=False):
+    """Turn a set of tracks back into a set of frames, and a set of
+       annotations, where each bbox is ID'ed with track number"""
     # assumption: tracks sorted by first frameid
-    # if incrementpatternm: interpolate by +1
     frames = []
     cur = []     # [[BBox]]
     tnum = 0
