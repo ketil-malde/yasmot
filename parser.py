@@ -34,11 +34,13 @@ def merge_bbs(bs):
     res = []
     fs = []
     for b in bs:
-        if fs == [] or b.frameid == fs[0].frameid: fs.append(b)
+        if fs == [] or b.frameid == fs[0].frameid:
+            fs.append(b)
         else:
             assert b.frameid > fs[0].frameid, 'FrameIDs should be lexicographically ordered'
             res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
             fs = [b]
+    res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
     return res
 
 def parse_retina(fname): # File -> [Frame]
