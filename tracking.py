@@ -174,7 +174,13 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
     for t in new_tracks:
         # todo: limit in real time (number of frames)
         if max_age is not None:
-            def extime(frid): return(int(parse(time_pattern,frid)[0]))
+            def extime(frid):
+                t = parse(time_pattern,frid)
+                if t is None:
+                    print(f'Error: invalid time pattern "{time_pattern}", doesn\'t match frame label "{frid}".')
+                    exit(255)
+                else:
+                    return int((t)[0])
             ot_lim = len([o for o in old_tracks[:old_track_limit] if extime(t.frameid) - extime(o.bbpairs[-1].frameid) < max_age])
         else:
             ot_lim = old_track_limit
