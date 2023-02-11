@@ -153,58 +153,12 @@ def track(frames):
         tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
     return tracks+old_tracks # sorted by time?
 
-def process_tracks(tracks, interpolate=False):
-    """Turn a set of tracks back into a set of frames, and a set of
-       annotations, where each bbox is ID'ed with track number"""
-    # assumption: tracks sorted by first frameid
-    frames = []
-    cur = []     # [[BBox]]
-    tnum = 0
-    tstats = {}
-    for t in tracks:
-        curframe = t.bbpairs[0].frameid
-
-        # output all frames from cur until caught up
-        def first(c): return c[0].frameid
-        if cur != []:
-            myfid = min([first(c) for c in cur])
-            while myfid < curframe:
-                # select out all myfids and build frame
-                mybbs = [c[0] for c in cur if first(c) == myfid]
-                frames.append(Frame(frameid=myfid, bboxes=mybbs))
-                # purge myfids from cur
-                c0 = [c[1:] for c in cur if first(c) == myfid]
-                rest = [c for c in cur if first(c) != myfid]
-                cur = [c for c in c0 + rest if c != []]
-                if cur == []: break
-                myfid = min([first(c) for c in cur])
-
-        def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
-        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs]) # todo: make cls be tnum here!
-        tstats[tnum] = {}
-        for b in t.bbpairs: tstats[tnum][b.cls] = []
-        for b in t.bbpairs: tstats[tnum][b.cls].append(b.pr)
-        # how to summarize this?
-        tnum += 1
-
-    # process rest of cur (copy from above)
-    while cur != []:
-        myfid = min([first(c) for c in cur])
-        mybbs = [c[0] for c in cur if first(c) == myfid]
-        frames.append(Frame(frameid=myfid, bboxes=mybbs))
-        # purge myfids from cur
-        c0 = [c[1:] for c in cur if first(c) == myfid]
-        rest = [c for c in cur if first(c) != myfid]
-        cur = [c for c in c0 + rest if c != []]
-
-    return frames, tstats
-
 def strack(frames):
     """Track paired bboxes from a stereo camera"""
     pass
 
 from parser import read_frames, show_frames
-from tracking import summarize_probs
+from tracking import summarize_probs, process_tracks
 from definitions import bbshow
 
 if __name__ == '__main__':

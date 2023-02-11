@@ -85,9 +85,10 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,
     # todo: add assertion that all inputs are outputs once?
     return res
 
-from definitions import BBox
+from definitions import BBox, Frame
 
 def consensus(bbs):
+    """Create a consensus bbox from a list of bboxes"""
     def avg(ls): return sum(ls)/len(ls)
     fid = bbs[0].frameid
     x = avg([b.x for b in bbs])
@@ -223,6 +224,52 @@ def summarize_probs(assoc):
     for r in res:
         totp += exp(res[r]-maxlogit)
     return cur, 1/totp, res
+
+def process_tracks(tracks, interpolate=False):
+    """Turn a set of tracks back into a set of frames, and a set of
+       annotations, where each bbox is ID'ed with track number"""
+    # assumption: tracks sorted by first frameid
+    frames = []
+    cur = []     # [[BBox]]
+    tnum = 0
+    tstats = {}
+    for t in tracks:
+        curframe = t.bbpairs[0].frameid
+
+        # output all frames from cur until caught up
+        def first(c): return c[0].frameid
+        if cur != []:
+            myfid = min([first(c) for c in cur])
+            while myfid < curframe:
+                # select out all myfids and build frame
+                mybbs = [c[0] for c in cur if first(c) == myfid]
+                frames.append(Frame(frameid=myfid, bboxes=mybbs))
+                # purge myfids from cur
+                c0 = [c[1:] for c in cur if first(c) == myfid]
+                rest = [c for c in cur if first(c) != myfid]
+                cur = [c for c in c0 + rest if c != []]
+                if cur == []: break
+                myfid = min([first(c) for c in cur])
+
+        def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
+        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs]) # todo: make cls be tnum here!
+        tstats[tnum] = {}
+        for b in t.bbpairs: tstats[tnum][b.cls] = []
+        for b in t.bbpairs: tstats[tnum][b.cls].append(b.pr)
+        # how to summarize this?
+        tnum += 1
+
+    # process rest of cur (copy from above)
+    while cur != []:
+        myfid = min([first(c) for c in cur])
+        mybbs = [c[0] for c in cur if first(c) == myfid]
+        frames.append(Frame(frameid=myfid, bboxes=mybbs))
+        # purge myfids from cur
+        c0 = [c[1:] for c in cur if first(c) == myfid]
+        rest = [c for c in cur if first(c) != myfid]
+        cur = [c for c in c0 + rest if c != []]
+
+    return frames, tstats
 
 def test():
     # read two annotation files
