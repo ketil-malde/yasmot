@@ -11,3 +11,7 @@ BBpair = namedtuple('BBPair', 'bbleft bbright')
 
 Track = namedtuple('Track', 'bbpairs')
 
+import sys
+def error(msg):
+    sys.stderr.write(msg+'\n')
+    exit(255)

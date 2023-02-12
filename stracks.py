@@ -108,8 +108,7 @@ def simple_consensus(framelist, frameindex=None): # :: [Frame] -> (Frame, extra 
         i = 0
         for t in tup[1:]:
             if t.frameid != myframe:
-                print(f'Error: frameID mismatch ("{t.frameid}" vs "{myframe}")')
-                sys.exit(-1)
+                error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
             else:
                 i = i+1  # todo: whops, only if not None
                 mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes)]
@@ -159,19 +158,25 @@ def strack(frames):
 
 from parser import read_frames, show_frames
 from tracking import summarize_probs, process_tracks
-from definitions import bbshow
+from definitions import bbshow, error
 
 if __name__ == '__main__':
     parser = make_args_parser()
     global args
     args = parser.parse_args()
+
+    # Define (trivial) functions for generating output
+    def output(line):
+        sys.stdout.write(line+'\n')
+    def tracks_output(line):
+        sys.stdout.write(line+'\n')
+        
     if args.consensus and args.stereo:
-        print('Error: Unsupported combination of arguments:')
-        print(args)
+        error('Unsupported combination of arguments:\n'+str(args))
+
     elif args.stereo:
         if len(args.FILES) != 2:
-            print(f'Error: Wrong number of files {len(args.FILES)} instead of 2.')
-            sys.exit(-1)
+            error(f'Wrong number of files {len(args.FILES)} instead of 2.')
         else:
             fs = [read_frames(f) for f in args.FILES]
             res1 = stereo(fs)
@@ -181,34 +186,31 @@ if __name__ == '__main__':
         # output and/or do tracking
     else:
         if len(args.FILES) > 1:
-            print(f'Error: Too many files, consider -s or -c')
-            sys.exit(-1)
+            error(f'Too many files, consider -s or -c')
         res1 = read_frames(args.FILES[0])
 
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
         ts = track(res1)
-
         def firstframe(t): return t.bbpairs[0].frameid
         ts.sort(key=firstframe)
 
         # todo: interpolate dummy detections in tracks
-        # maybe split up if too long gaps?
         # maybe eliminate very short tracks?
         if True:
             for x in ts:
-                print('Track:')
+                output('Track:')
                 for b in x.bbpairs:
-                    print(bbshow(b))
-                print()
+                    output(bbshow(b))
+                output('')
 
         fs, ss = process_tracks(ts)
         for f in fs:
             for b in f.bboxes:
-                print(bbshow(b))
+                output(bbshow(b))
         for s in ss:
             cls,prb,res = summarize_probs(ss[s])
-            print(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
+            tracks_output(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
@@ -218,6 +220,6 @@ if __name__ == '__main__':
                 astr = bbshow(a) if a is not None else dashes
                 bstr = bbshow(b) if b is not None else dashes
                 dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
-                print(astr+"\t"+bstr+"\t"+dist)
+                output(astr+"\t"+bstr+"\t"+dist)
     else:
         show_frames(res1)
