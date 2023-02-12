@@ -37,7 +37,7 @@ def make_args_parser():
                         help="""Maximum age to search for old tracks to resurrect.""")
     parser.add_argument('--time_pattern', '-t', default='{}', type=str,
                         help="""Pattern to extract time from frame ID.""")
-    parser.add_argument('--output', default="stracks.out", type=str, help="""Output file or directory""")
+    parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
 
     parser.add_argument('FILES', metavar='FILES', type=str, nargs='*',
                         help='Files or directories to process')
@@ -166,11 +166,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Define (trivial) functions for generating output
-    def output(line):
-        sys.stdout.write(line+'\n')
-    def tracks_output(line):
-        sys.stdout.write(line+'\n')
-        
+    if args.output is None:
+        def output(line):         sys.stdout.write(line+'\n')
+        def tracks_output(line):  sys.stdout.write(line+'\n')
+        def closeup(): pass
+    else:
+        of = open(args.output, 'w')
+        tf = open(args.output+'.tracks', 'w')        
+        def output(line):          of.write(line+'\n')
+        def tracks_output(line):   tf.write(line+'\n')
+        def closeup():
+            of.close()
+            tf.close()
+
     if args.consensus and args.stereo:
         error('Unsupported combination of arguments:\n'+str(args))
 
@@ -223,3 +231,5 @@ if __name__ == '__main__':
                 output(astr+"\t"+bstr+"\t"+dist)
     else:
         show_frames(res1)
+
+    closeup()
