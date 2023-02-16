@@ -201,9 +201,8 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
 from math import log
 
 def summarize_probs(assoc):
-    """From an assoc array of id -> class -> [probs], calculate consensus prob"""
+    """From an assoc array of class -> [probs], calculate consensus prob"""
     # should probably take into account autoregressive properties and whatnot, but...
-    # and use sum of logs rather than products for numerical stability, maybe
     res = {}
     num = len(assoc)
     other = 0  # maintain an "other" category
@@ -264,7 +263,7 @@ def process_tracks(tracks, interpolate=False):
                 myfid = min([first(c) for c in cur])
 
         def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
-        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs]) # todo: make cls be tnum here!
+        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs])
         tstats[tnum] = {}
         for b in t.bbpairs: tstats[tnum][b.cls] = []
         for b in t.bbpairs: tstats[tnum][b.cls].append(b.pr)
