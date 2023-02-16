@@ -100,11 +100,13 @@ def consensus(bbs):
     probs = {}
     for b in bbs: probs[b.cls] = []
     for b in bbs: probs[b.cls].append(b.pr)
-    ps = []
-    for c in probs:
-        ps.append((sum(probs[c]), c))
-    ps.sort()
-    p, cl = ps[-1]
+
+    if len(probs) == 1:
+        cl = list(probs.keys())[0]
+        p  = max(probs[cl])
+    else:
+        cl, p, res = summarize_probs(probs)
+
     return BBox(fid,x,y,w,h,cl,p)
 
 from parse import parse
@@ -214,6 +216,9 @@ def summarize_probs(assoc):
         # print('- ', cl,assoc[cl])
         for r in res:
             for p in assoc[cl]:
+                if p<=0 or p>=1:
+                    print(f'Whops: p={p}, ignoring')
+                    # continue
                 if cl==r:
                     res[r] += log(p)
                 else:
@@ -229,6 +234,7 @@ def summarize_probs(assoc):
     totp = 0
     for r in res:
         totp += exp(res[r]-maxlogit)
+    totp += exp(other-maxlogit)
     return cur, 1/totp, res
 
 def process_tracks(tracks, interpolate=False):
