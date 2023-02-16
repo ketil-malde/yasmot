@@ -207,10 +207,10 @@ if __name__ == '__main__':
         # maybe eliminate very short tracks?
         if True:
             for x in ts:
-                output('Track:')
+                print('Track:')
                 for b in x.bbpairs:
-                    output(bbshow(b))
-                output('')
+                    print(bbshow(b))
+                print('')
 
         fs, ss = process_tracks(ts)
         for f in fs:
