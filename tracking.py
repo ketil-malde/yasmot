@@ -215,9 +215,11 @@ def summarize_probs(assoc):
         # print('- ', cl,assoc[cl])
         for r in res:
             for p in assoc[cl]:
-                if p<=0 or p>=1:
-                    print(f'Whops: p={p}, ignoring')
-                    # continue
+                if p<=0 or p>1:
+                    print(f'Whops: p={p}')
+                # Set floor and ceiling for p
+                if p<0.0001: p=0.0001
+                if p>0.9999: p=0.9999
                 if cl==r:
                     res[r] += log(p)
                 else:
