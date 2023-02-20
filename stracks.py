@@ -165,6 +165,8 @@ if __name__ == '__main__':
     global args
     args = parser.parse_args()
 
+    rnheader = "frame_id\tx\ty\tw\th\tlabel\tprob"
+
     # Define (trivial) functions for generating output
     if args.output is None:
         def output(line):         sys.stdout.write(line+'\n')
@@ -206,24 +208,26 @@ if __name__ == '__main__':
         # todo: interpolate dummy detections in tracks
         # maybe eliminate very short tracks?
         if True:
-            for x in ts:
-                print('Track:')
+            for i,x in enumerate(ts):
+                print(f'Track: {i}')
                 for b in x.bbpairs:
                     print(bbshow(b))
                 print('')
 
         fs, ss = process_tracks(ts)
+        output('# '+rnheader)
         for f in fs:
             for b in f.bboxes:
                 output(bbshow(b))
         for s in ss:
             cls,prb,res = summarize_probs(ss[s])
-            tracks_output(f'track: {s} prediction: {cls} prob: {prb:.5f} logits: {res}')
+            tracks_output(f'track: {s} len: {len(ss[s])} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
         for x in res1:
             dashes = '-\t'*6+'-'
+            output('# '+rnheader+'\t'+rnheader)
             for a,b in x.bboxes: # assuming -s here?
                 astr = bbshow(a) if a is not None else dashes
                 bstr = bbshow(b) if b is not None else dashes
