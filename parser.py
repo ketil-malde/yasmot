@@ -24,9 +24,11 @@ def parse_yolodir(dirname):
 
 # For RetinaNet outputs: filename, x1 y1 x2 y2 class prob
 
-def tobbx_retina(ln):
+def tobbx_retina(ln, shape=(1228,1027)):
     assert len(ln)==7, f'RetinaNet-style annotations but wrong number of parameters: {len(ln)} instead of 7'
-    x1,y1,x2,y2 = float(ln[1]), float(ln[2]), float(ln[3]), float(ln[4])
+    xm, ym = shape
+    x1,y1,x2,y2 = float(ln[1])/xm, float(ln[2])/ym, float(ln[3])/xm, float(ln[4])/ym
+    assert all([s >= 0 and s <= 1 for s in [x1,y1,x2,y2]]), f'Illegal values in RN bbox'
     assert x2 > x1 and y2 > y1, f'RetinaNet annotations but second point smaller: {x1,y1} vs {x2,y2}'
     return BBox(frameid=ln[0], x=(x1+x2)/2, y=(y1+y2)/2, w=x2-x1, h=y2-y1, cls=ln[5], pr=float(ln[6]))
 
