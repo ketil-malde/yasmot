@@ -186,7 +186,7 @@ def summarize_probs(assoc):
     """From an assoc array of class -> [probs], calculate consensus prob"""
     # should probably take into account autoregressive properties and whatnot, but...
     res = {}
-    num = len(assoc)
+    num = len(assoc)+1
     other = 0  # maintain an "other" category
     for cl in assoc:
         res[cl] = 0
@@ -200,8 +200,8 @@ def summarize_probs(assoc):
                 if p<=0 or p>1:
                     print(f'Whops: p={p}')
                 # Set floor and ceiling for p
-                if p<0.0001: p=0.0001
-                if p>0.9999: p=0.9999
+                if p<0.001: p=0.001
+                if p>0.999: p=0.999
                 if cl==r:
                     res[r] += log(p)
                 else:
