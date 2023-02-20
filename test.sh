@@ -11,7 +11,7 @@ while read sum cmd; do
     done\
 	<<EOF
 b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 parser.py tests/L.csv
-1b51a787a2ba431b97bb6b6c3d38468ce0898f11 python3 stracks.py -s --track=0 tests/stereo*
+99830bc59da4915b04716b7053547d0f8dde36ac python3 stracks.py -s --track=0 tests/stereo*
 59b960bffddab667289cdda69e7dbdf755232a23 python3 stracks.py tests/lab2
 379c7b25283c7ad3f145d2697de5a61065900f31 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 a7c8d17d408a86066e8f1a5bae955b8c412c16f1 python3 stracks.py tests/error3.csv
