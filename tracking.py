@@ -29,39 +29,46 @@ tdistparams = namedtuple('TDparm', 'undefined')
 
 from math import exp
 
-def bbdist1(bb1, bb2, ignorey=False, scale=1): # BBox x BBox -> Float
-    """Calculate distance between bboxes, optionally ignoring y position 
-       (for stereo pairs), and providing a scale to soften/sharpen the output."""
+def deltas(bb1, bb2):
+    """Extract the differences in coodinates between two bboxes"""
+    return(bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls)
+
+def bbdist_track(bb1, bb2, scale=1): # BBox x BBox -> Float
+    """Calculate distance between bboxes
+       using scale to soften/sharpen the output."""
     # print(bb1, bb2)
-    dx, dy = bb1.x - bb2.x, bb1.y - bb2.y
-    dw, dh = bb1.w - bb2.w, bb1.h - bb2.h
-    dcls = bb1.cls == bb2.cls
+    dx, dy, dw, dh, dcls = deltas(bb1,bb2)
     w2, h2 = bb1.w*bb2.w, bb1.h*bb2.h
 
     # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
     xascore = exp(-dw**2/w2*scale)
     yascore = exp(-dh**2/h2*scale)
+    ypscore = exp(-dy**2/h2*scale)
     xpscore = exp(-dx**2/w2*scale)
-    if ignorey:
-        ypscore = 1
-    else:
-        ypscore = exp(-dy**2/h2*scale)
 
-    # use .pr? (confidence)
-    # print('-> xa: ', xascore, 'ya: ', yascore, 'xp: ', xpscore, 'yp: ', ypscore,)
     return(xpscore * ypscore * xascore * yascore)
 
-def bbdist_stereo(bb1, bb2):
-    return bbdist1(bb1, bb2, ignorey = True)
+def bbdist_stereo(bb1, bb2, scale=1):
+    """Calculate distance between bboxes in left and right stereo frames"""
+    dx, dy, dw, dh, dcls = deltas(bb1,bb2)
+    w2, h2 = bb1.w*bb2.w, bb1.h*bb2.h
+
+    # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
+    xascore = exp(-dw**2/w2*scale)
+    yascore = exp(-dh**2/h2*scale)
+    ypscore = exp(-dy**2/h2*scale)
+    xpscore = 1 # or should it be y?
+
+    return(xpscore * ypscore * xascore * yascore)
 
 def tdist(track, bbox): # Track x BBpairs
     """Distance between a track (last bbox) a set of bboxes)"""
-    return bbdist1(track.bbpairs[-1], bbox)
+    return bbdist_track(track.bbpairs[-1], bbox)
 
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
-def bbmatch(f1, f2, threshold=0.1, metric=bbdist1): # [BBox] x [BBox] -> [(BBox,BBox)]
+def bbmatch(f1, f2, threshold=0.1, metric=bbdist_track): # [BBox] x [BBox] -> [(BBox,BBox)]
     """Match bboxes from two frames."""
     mx = np.empty((len(f1), len(f2)))
     for a in range(len(f1)):
@@ -167,7 +174,7 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
 
     # merge duplicate bboxes
     for i, t in enumerate(new_tracks):
-        dupidx = [j for j in range(i,len(new_tracks)) if bbdist1(t,new_tracks[j]) > iou_merge_threshold ]
+        dupidx = [j for j in range(i,len(new_tracks)) if bbdist_track(t,new_tracks[j]) > iou_merge_threshold ]
         tmp_tracks = []
         for j in dupidx[::-1]:
             tmp_tracks.append(new_tracks.pop(j))
@@ -306,4 +313,4 @@ def test():
         for t in tracks:
             print(t)
             if len(t.bbpairs)>1:
-                print(bbdist1(t.bbpairs[0], t.bbpairs[1]))
+                print(bbdist_track(t.bbpairs[0], t.bbpairs[1]))
