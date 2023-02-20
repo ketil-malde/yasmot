@@ -10,10 +10,11 @@ while read sum cmd; do
     if [ $check == $sum ]; then echo "passed."; else echo "FAILED!"; status=255; fi
     done\
 	<<EOF
-a2e9031bb4695be8d10167359c5d4d2e22527bb2 python3 parser.py tests/L.csv
-e7bd2891fb15d75087cce4fed7b166d024199dba python3 stracks.py -s --track=0 tests/stereo*
-4ed3070d277257fb8342f04f0da8aa4b5b273128 python3 stracks.py tests/lab2
-a44dd9f46940f72af50b62b841b9ecb16e676467 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
+b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 parser.py tests/L.csv
+1b51a787a2ba431b97bb6b6c3d38468ce0898f11 python3 stracks.py -s --track=0 tests/stereo*
+59b960bffddab667289cdda69e7dbdf755232a23 python3 stracks.py tests/lab2
+379c7b25283c7ad3f145d2697de5a61065900f31 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
+a7c8d17d408a86066e8f1a5bae955b8c412c16f1 python3 stracks.py tests/error3.csv
 EOF
 
 exit $status
