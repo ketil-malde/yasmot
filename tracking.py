@@ -2,35 +2,10 @@ from collections import namedtuple
 
 from definitions import Track
 from parser import tobbx_yolo
-
-######################################################################
-# Match bboxes from two stereo still frames
-
-sdistparams = namedtuple('SDparm', 'undefined')
-# Vertical should be very similar, horizontal can/should vary, size should be similar
-# Can we determine empirically?
-
-def sdist(bleft, bright): # BBox x BBbox -> Float
-    '''Calculate distance between a bbox in the left and right frames'''
-    pass
-
-def smatch(frameleft, frameright):
-    '''Use Hungarian algorithm to match bboxes between left and right frames'''
-    pass
-
-######################################################################
-# Match paired bboxes with a set of existing tracks
-
-tdistparams = namedtuple('TDparm', 'undefined')
-# size and position should be similar, and maybe relative?
-# Determine empirically?
-# 50% likelihood of 10% distance/size change: fit Gaussian
-# cutoff prob < 0.1?
-
 from math import exp
 
 def deltas(bb1, bb2):
-    """Extract the differences in coodinates between two bboxes"""
+    """Helper function to extract the differences in coodinates between two bboxes"""
     return(bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls)
 
 def bbdist_track(bb1, bb2, scale=1): # BBox x BBox -> Float
