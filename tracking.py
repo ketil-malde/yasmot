@@ -71,6 +71,8 @@ from definitions import BBox, Frame
 
 def consensus(bbs):
     """Create a consensus bbox from a list of bboxes"""
+    assert len(bbs)>0, 'Error: consensus of zero bboxes?'
+
     def avg(ls): return sum(ls)/len(ls)
     fid = bbs[0].frameid
     x = avg([b.x for b in bbs])

@@ -184,6 +184,8 @@ if __name__ == '__main__':
     if args.consensus and args.stereo:
         error('Unsupported combination of arguments:\n'+str(args))
 
+    ##################################################
+    # Read in the detections as a stream of stereo frames, consensus frames, or just frames
     elif args.stereo:
         if len(args.FILES) != 2:
             error(f'Wrong number of files {len(args.FILES)} instead of 2.')
@@ -199,6 +201,8 @@ if __name__ == '__main__':
             error(f'Too many files, consider -s or -c')
         res1 = read_frames(args.FILES[0])
 
+    ##################################################
+    # Perform tracking
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
         ts = track(res1)
