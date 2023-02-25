@@ -95,92 +95,80 @@ def consensus(bbs):
 
 from parse import parse
 
-# NB! Modifies tracks parameter (append)
-# Might use bbmatch above for its guts?
-def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
-    '''Use Hungarian alg to match tracks and bboxes'''
-    iou_merge_threshold = 0.8
-    append_threshold    = 0.1
-    old_track_limit     = 5
-
+def assign(bbs, tracks, append_threshold = 0.1):
+    """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
-        # print('***** track=',t, '\n ->', tracks[t].bbpairs[-1])
         for b in range(len(bbs)):
             s = tdist(tracks[t], bbs[b])
-            # print('  match track=', t, 'bbox=', b, 'score=', s)
-            # print(bpairs[b])
             tmx[t,b] = s
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
-    # append b[bind] to t[tind] for index pairs
-    new_tracks = []
+    ##################################################
+    # Step one: match bbs'es to tracks
+    bbs_rest = []
     for i in range(len(tind)):
         tix, bix = tind[i], bind[i]
-        if tmx[tix, bix] > append_threshold:
-            # good match, add to the track
+        if tmx[tix, bix] > append_threshold: # good match, add to the track
             tracks[tix].bbpairs.append(bbs[bix])
-        elif max(tmx[:,bix]) < iou_merge_threshold:
-            # doesn't match any existing track
-            new_tracks.append(bbs[bix])
         else:
-            # duplicate of a track
-            # print('*** duplicate, p=', max(tmx[:,bind[i]])) # todo which track is max index here?
-            best = None
-            prob = 0
-            for j in range(len(tind)):
-                if tmx[tind[j], bix] > prob:
-                    prob = tmx[tind[j], bix]
-                    best = j
-            # print('ignoring:\n  ',bbs[bix],"\nbecause of\n",tracks[best].bbpairs[-1],'\np=',prob)
+            bbs_rest.append(bbs[bix])
 
-    # process the unmatched tracks, push to old_tracks
-    for j in range(len(tracks))[::-1]:
-        if j not in tind:
-            old_tracks.insert(0, tracks.pop(j))
-
-    # process unmatched bboxes
+    # add all bbs not in bind
     for k in range(len(bbs)):
         if k not in bind:
-            # todo: eliminate if too much IoU (double predictions)
-            if len(tmx[:,k]) > 0 and max(tmx[:,k]) > iou_merge_threshold:
-                # todo: make consensus annotation here?
-                pass
-            else:
-                new_tracks.append(bbs[k])
+            bbs_rest.append(bbs[k])
 
-    # merge duplicate bboxes
-    for i, t in enumerate(new_tracks):
-        dupidx = [j for j in range(i,len(new_tracks)) if bbdist_track(t,new_tracks[j]) > iou_merge_threshold ]
-        tmp_tracks = []
-        for j in dupidx[::-1]:
-            tmp_tracks.append(new_tracks.pop(j))
-        new_tracks.insert(0,consensus(tmp_tracks))
-                
-    for t in new_tracks:
-        # todo: limit in real time (number of frames)
-        if max_age is not None:
-            def extime(frid):
-                t = parse(time_pattern,frid)
-                if t is None:
-                    print(f'Error: invalid time pattern "{time_pattern}", doesn\'t match frame label "{frid}".')
-                    exit(255)
-                else:
-                    return int((t)[0])
-            ot_lim = len([o for o in old_tracks[:old_track_limit] if extime(t.frameid) - extime(o.bbpairs[-1].frameid) < max_age])
+    # pop unmatched tracks and return them
+    unmatched = []
+    for l in range(len(tracks)):
+        if l not in tind: unmatched.append(l)
+    unmatched_tracks = []
+    for l in sorted(unmatched)[::-1]:
+        unmatched_tracks.append(tracks.pop(l))
+
+    return bbs_rest, tracks, unmatched_tracks
+
+def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
+    '''Use Hungarian alg to match tracks and bboxes'''
+    iou_merge_threshold = 0.8
+    old_track_limit     = 5
+
+    bbs_rest, _matched, first_unmatched = assign(bbs, tracks)
+
+    ##################################################
+    # Step two: match bbs_rest to old_tracks
+    # Helper function: Extract time value from frame ID
+    def extime(frid):
+        t = parse(time_pattern,frid)
+        if t is None:
+            print(f'Error: invalid time pattern "{time_pattern}", doesn\'t match frame label "{frid}".')
+            exit(255)
         else:
-            ot_lim = old_track_limit
+            return int((t)[0])
 
-        appended = False
-        for j, u in enumerate(old_tracks[:ot_lim]):
-            if tdist(old_tracks[j], t) > append_threshold:
-                new = old_tracks.pop(j)
-                new.bbpairs.append(t)
-                tracks.append(new)
-                appended = True
-                break
-        if appended == False: tracks.append(Track([t]))
-    return
+    # Determine how far back to look
+    if bbs_rest != []:
+        if max_age is None:
+            ot_lim = min(old_track_limit, len(old_tracks))
+        else:
+            ot_lim = 0
+            while ot_lim < len(old_tracks) and extime(bbs_rest[0].frameid) - extime(old_tracks[ot_lim].bbpairs[-1].frameid) < max_age:
+                ot_lim += 1
+        ot = []
+        for i in range(ot_lim): ot.append(old_tracks.pop(0))
+
+        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot)
+        for m in matched:
+            tracks.append(m)
+        for o in first_unmatched + second_unmatched:
+            old_tracks.insert(0,o)
+
+    ##################################################
+    # Step three: remove spurious detections and generate new tracks
+    for bb in bbs_rest:
+        # if bb matches an existing track, or another bb, then merge, else:
+        tracks.insert(0, Track([bb]))
 
 from math import log
 
