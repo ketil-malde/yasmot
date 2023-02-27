@@ -21,7 +21,9 @@ def bbdist_track(bb1, bb2, scale=1): # BBox x BBox -> Float
     ypscore = exp(-dy**2/h2*scale)
     xpscore = exp(-dx**2/w2*scale)
 
-    return(xpscore * ypscore * xascore * yascore)
+    pscore = 0.4 + min(0.6, bb1.pr, bb2.pr)
+
+    return(xpscore * ypscore * xascore * yascore * pscore)
 
 def bbdist_stereo(bb1, bb2, scale=1):
     """Calculate distance between bboxes in left and right stereo frames"""
@@ -37,7 +39,7 @@ def bbdist_stereo(bb1, bb2, scale=1):
     return(xpscore * ypscore * xascore * yascore)
 
 def tdist(track, bbox): # Track x BBpairs
-    """Distance between a track (last bbox) a set of bboxes)"""
+    """Distance between a track (i.e. its last bbox) a bbox"""
     return bbdist_track(track.bbpairs[-1], bbox)
 
 from scipy.optimize import linear_sum_assignment
