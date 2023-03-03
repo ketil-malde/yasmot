@@ -5,7 +5,7 @@ from os.path import isdir, exists
 import sys
 
 # For YOLO-style directories, one file per frame, class first
-
+# Relative coordinates (0-1). Sequence: center_x center_y width height, y (y is from top of frame)
 def tobbx_yolo(fn, l):
     ln = l.strip().split(' ')
     assert len(ln)==6, f'Yolo-style annotations but wrong number of parameters: {ln}'
@@ -70,6 +70,35 @@ def show_frames(fs):
         for b in f.bboxes:
             print(bbshow(b))
 
+def write_yolo(of, fs):
+    for frame in fs:
+        with open(of+'/'+frame.frameid, 'w') as f:
+            for b in frame.bboxes:
+                f.write(f'{b.cls} {b.x:.3f} {b.y:.3f} {b.w:.3f} {b.h:.3f} {b.pr:.3f}\n')
+
+def write_rn(of, fs, shape=(1228,1027)):
+    with open(of, 'w') as f:
+        f.write('# header line\n')
+        for frame in fs:
+            for b in frame.bboxes:
+                x1 = (b.x-b.w/2)*shape[0]
+                y1 = (b.y-b.h/2)*shape[1]
+                x2 = (b.x+b.w/2)*shape[0]
+                y2 = (b.y+b.h/2)*shape[1]
+                f.write(f'{frame.frameid},{x1:.3f},{y1:.3f},{x2:.3f},{y2:.3f},{b.cls},{b.pr:.3f}\n')
+
+import os
+def write_frames(outfile, fs):
+    if exists(outfile): # does this handle trailing slash?
+        print(f'{outfile} already exists - aborting.')
+    elif outfile[-1] == '/':
+        os.mkdir(outfile)
+        write_yolo(outfile, fs)
+    elif outfile[-4:] == '.csv':
+        write_rn(outfile, fs)
+    else:
+        print('Specify an outfile ending in .csv or /')
+    
 # Testing
 import sys
 from definitions import bbshow
