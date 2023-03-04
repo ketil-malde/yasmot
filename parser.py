@@ -45,15 +45,15 @@ def merge_bbs(bs):
     res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
     return res
 
-def parse_retina(fname): # File -> [Frame]
+def parse_retina(fname, shape): # File -> [Frame]
     with open(fname, 'r') as f:
-        ls = [ tobbx_retina(l.strip().split(',')) for l in f.readlines()[1:] ]
+        ls = [ tobbx_retina(l.strip().split(','), shape) for l in f.readlines()[1:] ]
     fs = merge_bbs(ls)
     return fs
 
 # Detect and extract
 
-def read_frames(fn):
+def read_frames(fn, shape=(1228,1027)):
     """Read all frames from a file (RetinaNet format) or directory (YOLO)"""
     if not exists(fn):
         print(f'No such file or directory: {fn}')
