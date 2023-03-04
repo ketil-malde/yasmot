@@ -72,7 +72,7 @@ def show_frames(fs):
 
 def write_yolo(of, fs):
     for frame in fs:
-        with open(of+'/'+frame.frameid, 'w') as f:
+        with open(of+'/'+frame.frameid+'.txt', 'w') as f:
             for b in frame.bboxes:
                 f.write(f'{b.cls} {b.x:.3f} {b.y:.3f} {b.w:.3f} {b.h:.3f} {b.pr:.3f}\n')
 
