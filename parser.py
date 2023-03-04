@@ -24,12 +24,12 @@ def parse_yolodir(dirname):
 
 # For RetinaNet outputs: filename, x1 y1 x2 y2 class prob
 
-def tobbx_retina(ln, shape=(1228,1027)):
+def tobbx_retina(ln, shape):
     assert len(ln)==7, f'RetinaNet-style annotations but wrong number of parameters: {len(ln)} instead of 7'
     xm, ym = shape
     x1,y1,x2,y2 = float(ln[1])/xm, float(ln[2])/ym, float(ln[3])/xm, float(ln[4])/ym
-    assert all([s >= 0 and s <= 1 for s in [x1,y1,x2,y2]]), f'Illegal values in RN bbox'
-    assert x2 > x1 and y2 > y1, f'RetinaNet annotations but second point smaller: {x1,y1} vs {x2,y2}'
+    assert all([s >= 0 and s <= 1 for s in [x1,y1,x2,y2]]), f'Illegal values in RN bbox:\n  {ln}\n  {shape}'
+    assert x2 > x1 and y2 > y1, f'RetinaNet annotations but second point smaller: {x1,y1} vs {x2,y2}:\n  {ln}'
     return BBox(frameid=ln[0], x=(x1+x2)/2, y=(y1+y2)/2, w=x2-x1, h=y2-y1, cls=ln[5], pr=float(ln[6]))
 
 def merge_bbs(bs):
@@ -62,7 +62,7 @@ def read_frames(fn, shape=(1228,1027)):
     if isdir(fn): # yolo
         return parse_yolodir(fn)
     else: # retinanet
-        return parse_retina(fn)
+        return parse_retina(fn, shape)
 
 def show_frames(fs):
     for f in fs:
