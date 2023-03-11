@@ -46,8 +46,10 @@ def merge_bbs(bs):
     return res
 
 def parse_retina(fname, shape): # File -> [Frame]
+    def is_header(l):
+        return l.strip()=='datetime,x0,y0,x1,y1,label,score' or l[0]=='#'
     with open(fname, 'r') as f:
-        ls = [ tobbx_retina(l.strip().split(','), shape) for l in f.readlines()[1:] ]
+        ls = [ tobbx_retina(l.strip().split(','), shape) for l in f.readlines() if not is_header(l) ]
     fs = merge_bbs(ls)
     return fs
 
