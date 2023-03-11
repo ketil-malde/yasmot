@@ -148,8 +148,10 @@ def track(frames):
     tracks = []
     old_tracks = []
     for f in frames:
-        # print(f.frameid)
+        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
+        # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
+        # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks+old_tracks # sorted by time?
 
 def strack(frames):
@@ -201,6 +203,7 @@ if __name__ == '__main__':
             error(f'Too many files, consider -s or -c')
         res1 = read_frames(args.FILES[0])
 
+    # print(f'*** Read number of frames: {len(res1)}, total bboxes {len([b for f in res1 for b in f.bboxes])}')
     ##################################################
     # Perform tracking
     if args.track:
@@ -208,6 +211,8 @@ if __name__ == '__main__':
         ts = track(res1)
         def firstframe(t): return t.bbpairs[0].frameid
         ts.sort(key=firstframe)
+
+        # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bbpairs])}')
 
         # todo: interpolate dummy detections in tracks
         # maybe eliminate very short tracks?

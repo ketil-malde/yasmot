@@ -7,5 +7,3 @@ inf  = sys.argv[1]
 outf = sys.argv[2]
 
 write_frames(outf, read_frames(inf))
-
-

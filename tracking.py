@@ -137,6 +137,7 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
     old_track_limit     = 5
 
     bbs_rest, _matched, first_unmatched = assign(bbs, tracks)
+    # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bbpairs])}, unmatched {len([b for t in first_unmatched for b in t.bbpairs])}')
 
     ##################################################
     # Step two: match bbs_rest to old_tracks
@@ -163,8 +164,10 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
         bbs_rest, matched, second_unmatched = assign(bbs_rest, ot)
         for m in matched:
             tracks.append(m)
-        for o in first_unmatched + second_unmatched:
-            old_tracks.insert(0,o)
+
+        for o in second_unmatched: old_tracks.insert(0,o)
+
+    for o in first_unmatched: old_tracks.insert(0,o)
 
     ##################################################
     # Step three: remove spurious detections and generate new tracks
