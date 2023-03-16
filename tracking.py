@@ -71,8 +71,8 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist_track): # [BBox] x [BBox] -> [(
 
 from definitions import BBox, Frame
 
-def consensus(bbs):
-    """Create a consensus bbox from a list of bboxes"""
+def xconsensus(bbs):
+    """Create a consensus bbox from a list of bboxes - not used?"""
     assert len(bbs)>0, 'Error: consensus of zero bboxes?'
 
     def avg(ls): return sum(ls)/len(ls)

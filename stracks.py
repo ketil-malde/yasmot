@@ -72,9 +72,9 @@ def zip_frames(lists):
         lists = tails
     return results
 
-def simple_consensus(framelist, frameindex=None): # :: [Frame] -> (Frame, extra data)
-    """Build a consensus annotation for a set of frames"""
-    # merge input lists (one frame from each?)
+def consensus_frame(tup): # (Frame a,..) -> Frame a
+    """Build consensus for a tuple of frames"""
+
     def consensus(bbpair,i):  # todo: use tracking.consensus instead?
         """Merge two bboxes"""
         bb1, bb2 = bbpair
@@ -88,7 +88,7 @@ def simple_consensus(framelist, frameindex=None): # :: [Frame] -> (Frame, extra 
         w = a*bb1.w + b*bb2.w
         h = a*bb1.h + b*bb2.h
 
-        # this is probably not technically correct?
+        # this is probably not technically correct?  Use summarize_probs!
         if bb1.cls == bb2.cls:
             cl = bb1.cls
             p = bb1.pr + bb2.pr
@@ -100,46 +100,28 @@ def simple_consensus(framelist, frameindex=None): # :: [Frame] -> (Frame, extra 
             p = bb2.pr - bb1.pr
             
         return BBox(fid,x,y,w,h,cl,p)
-    
-    def cons1(tup): # (Frame a,..) -> Frame a
-        """Build consensus for a tuple of frames"""
-        myframe=tup[0].frameid
-        mybboxes=tup[0].bboxes
-        i = 0
-        for t in tup[1:]:
-            if t.frameid != myframe:
-                error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
-            else:
-                i = i+1  # todo: whops, only if not None
-                mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes)]
-                if False: # debugging
-                    for t in tup:
-                        print('***',t)
-                    print(mybboxes,'\n')
-        # todo: adjust probs into something meaningful (divide by len tup?)
-        return Frame(frameid=myframe, bboxes=mybboxes)
+
+    myframe=tup[0].frameid
+    mybboxes=tup[0].bboxes
+    i = 0
+    for t in tup[1:]:
+        if t.frameid != myframe:
+            error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
+        else:
+            i = i+1  # todo: whops, only if not None
+            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes)]
+            if False: # debugging
+                for t in tup:
+                    print('***',t)
+                print(mybboxes,'\n')
+                # todo: adjust probs into something meaningful (divide by len tup?)
+    return Frame(frameid=myframe, bboxes=mybboxes)
  
-    # - or separate index
-    res = []
-    for t in zip_frames(framelist):
-        res.append(cons1(t))
-    # return merged frames
-    return res
-
-def stereo(framelist): # :: Frame x Frame -> Frame of BBpairs
-
-    def merge_frames(fs):
-        (f1,f2) = fs
-        assert f1.frameid == f2.frameid, f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}"
-        bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo)
-        return Frame(frameid = f1.frameid, bboxes = bbpairs)
-
-    # driver code is exactly as above - todo: refactor?
-    [fr_left, fr_right] = framelist
-    res = []
-    for t in zip_frames([fr_left, fr_right]):
-        res.append(merge_frames(t))
-    return res
+def merge_frames(fs):
+    (f1,f2) = fs
+    assert f1.frameid == f2.frameid, f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}"
+    bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo)
+    return Frame(frameid = f1.frameid, bboxes = bbpairs)
 
 from tracking import tmatch
 
@@ -192,12 +174,18 @@ if __name__ == '__main__':
         if len(args.FILES) != 2:
             error(f'Wrong number of files {len(args.FILES)} instead of 2.')
         else:
-            fs = [read_frames(f) for f in args.FILES]
-            res1 = stereo(fs)
+            [fr_left, fr_right] = [read_frames(f) for f in args.FILES]
+            res1 = []
+            for t in zip_frames([fr_left, fr_right]):
+                res1.append(merge_frames(t))
+
     elif args.consensus:
         fs = [read_frames(f) for f in args.FILES]
-        res1 = simple_consensus(fs)
+        res1 = []
+        for t in zip_frames(fs):
+            res1.append(consensus_frame(t))
         # output and/or do tracking
+
     else:
         if len(args.FILES) > 1:
             error(f'Too many files, consider -s or -c')
