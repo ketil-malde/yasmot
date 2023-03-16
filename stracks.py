@@ -218,7 +218,7 @@ if __name__ == '__main__':
                 output(bbshow(b))
         for s in ss:
             cls,prb,res = summarize_probs(ss[s])
-            tracks_output(f'track: {s} len: {len(ss[s])} prediction: {cls} prob: {prb:.5f} logits: {res}')
+            tracks_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
