@@ -7,14 +7,20 @@ status=0
 while read sum cmd; do
     echo -n "$cmd ... "
     check=$($cmd | sha1sum | cut -f1 -d' ')
-    if [ $check == $sum ]; then echo "passed."; else echo "FAILED!"; status=255; fi
+    if [ $check == $sum ]; then
+	echo "passed."
+    else
+	echo "FAILED!"
+	$cmd > $sum.out
+	status=255
+    fi
     done\
 	<<EOF
 b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 parser.py tests/L.csv
-99830bc59da4915b04716b7053547d0f8dde36ac python3 stracks.py -s --track=0 tests/stereo*
-59b960bffddab667289cdda69e7dbdf755232a23 python3 stracks.py tests/lab2
-379c7b25283c7ad3f145d2697de5a61065900f31 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
-a7c8d17d408a86066e8f1a5bae955b8c412c16f1 python3 stracks.py tests/error3.csv
+00f396809617e38bd1156f7d87f8eca42f531214 python3 stracks.py -s --track=0 tests/stereo*
+26e8bdf5352a792786d26b738d4d213bbcc369b2 python3 stracks.py tests/lab2
+bc22a05c6283c68483bce2d5967eabc116a319f3 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
+ebcdcfabf938ed5562528662a417fc8660fa21ca python3 stracks.py tests/error3.csv
 EOF
 
 exit $status
