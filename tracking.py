@@ -8,7 +8,7 @@ def deltas(bb1, bb2):
     """Helper function to extract the differences in coodinates between two bboxes"""
     return(bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls)
 
-def bbdist_track(bb1, bb2, scale=1): # BBox x BBox -> Float
+def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
     """Calculate distance between bboxes
        using scale to soften/sharpen the output."""
     # print(bb1, bb2)
@@ -38,13 +38,14 @@ def bbdist_stereo(bb1, bb2, scale=1):
 
     return(xpscore * ypscore * xascore * yascore)
 
-def tdist(track, bbox): # Track x BBpairs
+def tdist(track, bbox, scale=1): # Track x BBpairs
     """Distance between a track (i.e. its last bbox) a bbox"""
-    return bbdist_track(track.bbpairs[-1], bbox)
+    return bbdist_track(track.bbpairs[-1], bbox, scale)
 
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
+# Used only for stereo tracks, I think?
 def bbmatch(f1, f2, threshold=0.1, metric=bbdist_track): # [BBox] x [BBox] -> [(BBox,BBox)]
     """Match bboxes from two frames."""
     mx = np.empty((len(f1), len(f2)))
@@ -97,12 +98,12 @@ def xconsensus(bbs):
 
 from parse import parse
 
-def assign(bbs, tracks, append_threshold = 0.1):
+def assign(bbs, tracks, scale, append_threshold = 0.1):
     """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         for b in range(len(bbs)):
-            s = tdist(tracks[t], bbs[b])
+            s = tdist(tracks[t], bbs[b], scale)
             tmx[t,b] = s
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
@@ -131,12 +132,12 @@ def assign(bbs, tracks, append_threshold = 0.1):
 
     return bbs_rest, tracks, unmatched_tracks
 
-def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
+def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
     '''Use Hungarian alg to match tracks and bboxes'''
     iou_merge_threshold = 0.8
     old_track_limit     = 5
 
-    bbs_rest, _matched, first_unmatched = assign(bbs, tracks)
+    bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale)
     # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bbpairs])}, unmatched {len([b for t in first_unmatched for b in t.bbpairs])}')
 
     ##################################################
@@ -161,7 +162,7 @@ def tmatch(bbs, tracks, old_tracks, max_age=None, time_pattern=None):
         ot = []
         for i in range(ot_lim): ot.append(old_tracks.pop(0))
 
-        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot)
+        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot, scale)
         for m in matched:
             tracks.append(m)
 

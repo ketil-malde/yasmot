@@ -37,6 +37,7 @@ def make_args_parser():
                         help="""Maximum age to search for old tracks to resurrect.""")
     parser.add_argument('--time_pattern', '-t', default='{}', type=str,
                         help="""Pattern to extract time from frame ID.""")
+    parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
     parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
 
     parser.add_argument('FILES', metavar='FILES', type=str, nargs='*',
@@ -132,7 +133,7 @@ def track(frames):
     for f in frames:
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern) # match bboxes to tracks (tmatch)
+        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale) # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks+old_tracks # sorted by time?
 
