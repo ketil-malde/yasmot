@@ -19,6 +19,17 @@ def bool_flag(s):
     else:
         raise argparse.ArgumentTypeError("invalid value for a boolean flag")
 
+from parse import parse
+
+def intpair(s):
+    """Parse a pair of integers from the command line"""
+    w,h = parse("{:d},{:d}", s)
+    if w is None or h is None:
+        printf(f'Error: can\'t parse {s} as a pair of integers')
+        exit(255)
+    else:
+        return((int(w), int(h)))
+
 desc = """Track detected objects, optionally linking stereo images and/or
           merging independent detections into a consensus"""
 def make_args_parser():
@@ -38,6 +49,7 @@ def make_args_parser():
     parser.add_argument('--time_pattern', '-t', default='{}', type=str,
                         help="""Pattern to extract time from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
+    parser.add_argument('--shape', default=(1228,1027), type=intpair, help="""Image dimensions, width and height.""")    
     parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
 
     parser.add_argument('FILES', metavar='FILES', type=str, nargs='*',
@@ -175,13 +187,13 @@ if __name__ == '__main__':
         if len(args.FILES) != 2:
             error(f'Wrong number of files {len(args.FILES)} instead of 2.')
         else:
-            [fr_left, fr_right] = [read_frames(f) for f in args.FILES]
+            [fr_left, fr_right] = [read_frames(f, shape=args.shape) for f in args.FILES]
             res1 = []
             for t in zip_frames([fr_left, fr_right]):
                 res1.append(merge_frames(t))
 
     elif args.consensus:
-        fs = [read_frames(f) for f in args.FILES]
+        fs = [read_frames(f, shape=args.shape) for f in args.FILES]
         res1 = []
         for t in zip_frames(fs):
             res1.append(consensus_frame(t))
@@ -190,7 +202,7 @@ if __name__ == '__main__':
     else:
         if len(args.FILES) > 1:
             error(f'Too many files, consider -s or -c')
-        res1 = read_frames(args.FILES[0])
+        res1 = read_frames(args.FILES[0], shape=args.shape)
 
     # print(f'*** Read number of frames: {len(res1)}, total bboxes {len([b for f in res1 for b in f.bboxes])}')
     ##################################################
