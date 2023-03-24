@@ -12,15 +12,49 @@ def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
     """Calculate distance between bboxes
        using scale to soften/sharpen the output."""
     # print(bb1, bb2)
-    dx, dy, dw, dh, dcls = deltas(bb1,bb2)
-    w2, h2 = bb1.w*bb2.w, bb1.h*bb2.h
+    x1, y1, w1, h1 = bb1.x, bb1.y, bb1.w, bb1.h
+    x2, y2, w2, h2 = bb2.x, bb2.y, bb2.w, bb2.h
+
+    # adjust for edge boxes
+    if True:
+      if x1 + w1/2 > 0.97:
+        x1 = x1 + (w2-w1)/2
+        w1 = w2
+      if x1 - w1/2 < 0.03:
+        x1 = x1 - (w2-w1)/2
+        w1 = w2
+
+      if y1 + h1/2 > 0.97:
+        y1 = y1 + (h2-h1)/2
+        h1 = h2
+      if y1 - h1/2 < 0.03:
+        y1 = y1 - (h2-h1)/2
+        h1 = h2
+
+      if x2 + w2/2 > 0.97:
+        x2 = x2 + (w1-w2)/2
+        w2 = w1
+      if x2 - w2/2 < 0.03:
+        x2 = x2 - (w1-w2)/2
+        w2 = w1
+
+      if y2 + h2/2 > 0.97:
+        y2 = y2 + (h1-h2)/2
+        h2 = h1
+      if y2 - h2/2 < 0.03:
+        y2 = y2 - (h1-h2)/2
+        h2 = h1
+
+    dx, dy, dw, dh, dcls = x1 - x2, y1 - y2, w1 - w2, h1 - h2, bb1.cls == bb2.cls # deltas()
+    wsq, hsq = w1*w2*scale, h1*h2*scale
 
     # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
-    xascore = exp(-dw**2/w2*scale)
-    yascore = exp(-dh**2/h2*scale)
-    ypscore = exp(-dy**2/h2*scale)
-    xpscore = exp(-dx**2/w2*scale)
+    xascore = exp(-dw**2/wsq)
+    yascore = exp(-dh**2/hsq)
+    ypscore = exp(-dy**2/hsq)
+    xpscore = exp(-dx**2/wsq)
 
+    # pscore = 0.19 + 2*min(0.9,bb1.pr)*min(0.9,bb2.pr)
     pscore = 0.4 + min(0.6, bb1.pr, bb2.pr)
 
     return(xpscore * ypscore * xascore * yascore * pscore)
