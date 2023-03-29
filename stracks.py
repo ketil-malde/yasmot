@@ -210,17 +210,17 @@ if __name__ == '__main__':
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
         ts = track(res1)
-        def firstframe(t): return t.bbpairs[0].frameid
+        def firstframe(t): return t.bblist[0].frameid
         ts.sort(key=firstframe)
 
-        # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bbpairs])}')
+        # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')
 
         # todo: interpolate dummy detections in tracks
         # maybe eliminate very short tracks?
         if True:
             for i,x in enumerate(ts):
                 print(f'Track: {i}')
-                for b in x.bbpairs:
+                for b in x.bblist:
                     print(bbshow(b))
                 print('')
 

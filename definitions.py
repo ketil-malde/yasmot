@@ -9,7 +9,7 @@ Frame = namedtuple('Frame', 'frameid bboxes') # :: [BBox]
 
 BBpair = namedtuple('BBPair', 'bbleft bbright')
 
-Track = namedtuple('Track', 'bbpairs')
+Track = namedtuple('Track', 'bblist')
 
 import sys
 def error(msg):

@@ -74,7 +74,7 @@ def bbdist_stereo(bb1, bb2, scale=1):
 
 def tdist(track, bbox, scale=1): # Track x BBpairs
     """Distance between a track (i.e. its last bbox) a bbox"""
-    return bbdist_track(track.bbpairs[-1], bbox, scale)
+    return bbdist_track(track.bblist[-1], bbox, scale)
 
 from scipy.optimize import linear_sum_assignment
 import numpy as np
@@ -147,7 +147,7 @@ def assign(bbs, tracks, scale, append_threshold = 0.1):
     for i in range(len(tind)):
         tix, bix = tind[i], bind[i]
         if tmx[tix, bix] > append_threshold: # good match, add to the track
-            tracks[tix].bbpairs.append(bbs[bix])
+            tracks[tix].bblist.append(bbs[bix])
         else:
             bbs_rest.append(bbs[bix])
 
@@ -171,8 +171,10 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
     iou_merge_threshold = 0.8
     old_track_limit     = 5
 
+    ##################################################
+    # Step one: match bbs'es to existing tracks
     bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale)
-    # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bbpairs])}, unmatched {len([b for t in first_unmatched for b in t.bbpairs])}')
+    # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bblist])}, unmatched {len([b for t in first_unmatched for b in t.bblist])}')
 
     ##################################################
     # Step two: match bbs_rest to old_tracks
@@ -191,7 +193,7 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
             ot_lim = min(old_track_limit, len(old_tracks))
         else:
             ot_lim = 0
-            while ot_lim < len(old_tracks) and extime(bbs_rest[0].frameid) - extime(old_tracks[ot_lim].bbpairs[-1].frameid) < max_age:
+            while ot_lim < len(old_tracks) and extime(bbs_rest[0].frameid) - extime(old_tracks[ot_lim].bblist[-1].frameid) < max_age:
                 ot_lim += 1
         ot = []
         for i in range(ot_lim): ot.append(old_tracks.pop(0))
@@ -259,7 +261,7 @@ def process_tracks(tracks, interpolate=False):
     tnum = 0
     tstats = {}
     for t in tracks:
-        curframe = t.bbpairs[0].frameid
+        curframe = t.bblist[0].frameid
 
         # output all frames from cur until caught up
         def first(c): return c[0].frameid
@@ -277,10 +279,10 @@ def process_tracks(tracks, interpolate=False):
                 myfid = min([first(c) for c in cur])
 
         def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
-        cur.insert(0,[setid(b,str(tnum)) for b in t.bbpairs])
+        cur.insert(0,[setid(b,str(tnum)) for b in t.bblist])
         tstats[tnum] = {}
-        for b in t.bbpairs: tstats[tnum][b.cls] = []
-        for b in t.bbpairs: tstats[tnum][b.cls].append(b.pr)
+        for b in t.bblist: tstats[tnum][b.cls] = []
+        for b in t.bblist: tstats[tnum][b.cls].append(b.pr)
         # how to summarize this?
         tnum += 1
 
@@ -317,5 +319,5 @@ def test():
         # print tdist
         for t in tracks:
             print(t)
-            if len(t.bbpairs)>1:
-                print(bbdist_track(t.bbpairs[0], t.bbpairs[1]))
+            if len(t.bblist)>1:
+                print(bbdist_track(t.bblist[0], t.bblist[1]))
