@@ -104,7 +104,7 @@ def bbmatch(f1, f2, threshold=0.1, metric=bbdist_track): # [BBox] x [BBox] -> [(
     # todo: add assertion that all inputs are outputs once?
     return res
 
-from definitions import BBox, Frame
+from definitions import BBox, Frame, g_trackno
 
 def xconsensus(bbs):
     """Create a consensus bbox from a list of bboxes - not used?"""
@@ -208,9 +208,11 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
 
     ##################################################
     # Step three: remove spurious detections and generate new tracks
+    global g_trackno
     for bb in bbs_rest:
         # if bb matches an existing track, or another bb, then merge, else:
-        tracks.insert(0, Track([bb]))
+        tracks.insert(0, Track(trackid=g_trackno, bblist=[bb]))
+        g_trackno += 1
 
 from math import log
 

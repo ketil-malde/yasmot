@@ -158,6 +158,8 @@ from tracking import summarize_probs, process_tracks
 from definitions import bbshow, error
 
 if __name__ == '__main__':
+    g_trackno = 0
+
     parser = make_args_parser()
     global args
     args = parser.parse_args()
@@ -218,8 +220,8 @@ if __name__ == '__main__':
         # todo: interpolate dummy detections in tracks
         # maybe eliminate very short tracks?
         if True:
-            for i,x in enumerate(ts):
-                print(f'Track: {i}')
+            for x in ts:
+                print(f'Track: {x.trackid}')
                 for b in x.bblist:
                     print(bbshow(b))
                 print('')

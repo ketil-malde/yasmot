@@ -1,5 +1,8 @@
 from collections import namedtuple
 
+global g_trackno
+g_trackno = 0
+
 BBox = namedtuple('BBox', 'frameid x y w h cls pr')  # :: Doubles
 
 def bbshow(b):
@@ -9,7 +12,7 @@ Frame = namedtuple('Frame', 'frameid bboxes') # :: [BBox]
 
 BBpair = namedtuple('BBPair', 'bbleft bbright')
 
-Track = namedtuple('Track', 'bblist')
+Track = namedtuple('Track', 'trackid bblist')
 
 import sys
 def error(msg):
