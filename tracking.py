@@ -4,6 +4,7 @@ from definitions import Track
 from parser import tobbx_yolo
 from math import exp
 
+# manually inlined below for speed
 def deltas(bb1, bb2):
     """Helper function to extract the differences in coodinates between two bboxes"""
     return(bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls)
@@ -61,14 +62,18 @@ def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
 
 def bbdist_stereo(bb1, bb2, scale=1):
     """Calculate distance between bboxes in left and right stereo frames"""
-    dx, dy, dw, dh, dcls = deltas(bb1,bb2)
-    w2, h2 = bb1.w*bb2.w, bb1.h*bb2.h
+    dx, dy, dw, dh, dcls = bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls # deltas()
+    w2, h2 = bb1.w*bb2.w*scale, bb1.h*bb2.h*scale
 
     # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
-    xascore = exp(-dw**2/w2*scale)
-    yascore = exp(-dh**2/h2*scale)
-    ypscore = exp(-dy**2/h2*scale)
-    xpscore = 1 # or should it be y?
+    xascore = exp(-dw**2/w2)
+    yascore = exp(-dh**2/h2)
+    # difference in y direction should be very small, multiply by 2
+    ypscore = exp(-dy**2/h2*3)
+    # todo: edge boxes reduce chance of match
+    # left detection to the right of the right detection (exponential curve?)
+    # not dependent on size
+    xpscore = exp(-2*(bb1.x - bb2.x - 0.05)**2)
 
     return(xpscore * ypscore * xascore * yascore)
 
