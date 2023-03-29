@@ -235,9 +235,9 @@ if __name__ == '__main__':
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
+        dashes = '-\t'*6+'-'
+        output('# '+rnheader+'\t'+rnheader+'\tsimilarity')
         for x in res1:
-            dashes = '-\t'*6+'-'
-            output('# '+rnheader+'\t'+rnheader+'\tsimilarity')
             for a,b in x.bboxes: # assuming -s here?
                 astr = bbshow(a) if a is not None else dashes
                 bstr = bbshow(b) if b is not None else dashes
