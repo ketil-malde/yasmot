@@ -9,43 +9,28 @@ def deltas(bb1, bb2):
     """Helper function to extract the differences in coodinates between two bboxes"""
     return(bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls)
 
+def edgecorrect(x,w,w2):
+    """If w brings x to edge, adjust w to w2"""
+    if x + w/2 > 0.97:
+        x = x + (w2-w)/2
+        w = w2
+    if x - w/2 < 0.03:
+        x = x - (w2-w)/2
+        w = w2
+    return(x,w)
+
 def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
     """Calculate distance between bboxes
        using scale to soften/sharpen the output."""
-    # print(bb1, bb2)
+
     x1, y1, w1, h1 = bb1.x, bb1.y, bb1.w, bb1.h
     x2, y2, w2, h2 = bb2.x, bb2.y, bb2.w, bb2.h
 
-    # adjust for edge boxes
-    if True:
-      if x1 + w1/2 > 0.97:
-        x1 = x1 + (w2-w1)/2
-        w1 = w2
-      if x1 - w1/2 < 0.03:
-        x1 = x1 - (w2-w1)/2
-        w1 = w2
-
-      if y1 + h1/2 > 0.97:
-        y1 = y1 + (h2-h1)/2
-        h1 = h2
-      if y1 - h1/2 < 0.03:
-        y1 = y1 - (h2-h1)/2
-        h1 = h2
-
-      if x2 + w2/2 > 0.97:
-        x2 = x2 + (w1-w2)/2
-        w2 = w1
-      if x2 - w2/2 < 0.03:
-        x2 = x2 - (w1-w2)/2
-        w2 = w1
-
-      if y2 + h2/2 > 0.97:
-        y2 = y2 + (h1-h2)/2
-        h2 = h1
-      if y2 - h2/2 < 0.03:
-        y2 = y2 - (h1-h2)/2
-        h2 = h1
-
+    x1, w1 = edgecorrect(x1,w1,w2)
+    y1, h1 = edgecorrect(y1,h1,h2)
+    x2, w2 = edgecorrect(x2,w2,w1)    
+    y2, h2 = edgecorrect(y2,h2,h1)
+    
     dx, dy, dw, dh, dcls = x1 - x2, y1 - y2, w1 - w2, h1 - h2, bb1.cls == bb2.cls # deltas()
     wsq, hsq = w1*w2*scale, h1*h2*scale
 
@@ -62,20 +47,30 @@ def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
 
 def bbdist_stereo(bb1, bb2, scale=1):
     """Calculate distance between bboxes in left and right stereo frames"""
-    dx, dy, dw, dh, dcls = bb1.x - bb2.x, bb1.y - bb2.y, bb1.w - bb2.w, bb1.h - bb2.h, bb1.cls == bb2.cls # deltas()
-    w2, h2 = bb1.w*bb2.w*scale, bb1.h*bb2.h*scale
+
+    x1, y1, w1, h1 = bb1.x, bb1.y, bb1.w, bb1.h
+    x2, y2, w2, h2 = bb2.x, bb2.y, bb2.w, bb2.h
+
+    x1, w1 = edgecorrect(x1,w1,w2)
+    y1, h1 = edgecorrect(y1,h1,h2)
+    x2, w2 = edgecorrect(x2,w2,w1)    
+    y2, h2 = edgecorrect(y2,h2,h1)
+    
+    dx, dy, dw, dh, dcls = x1 - x2, y1 - y2, w1 - w2, h1 - h2, bb1.cls == bb2.cls # deltas()
+    wsq, hsq = w1*w2*scale, h1*h2*scale
 
     # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
-    xascore = exp(-dw**2/w2)
-    yascore = exp(-dh**2/h2)
-    # difference in y direction should be very small, multiply by 2
-    ypscore = exp(-dy**2/h2*3)
-    # todo: edge boxes reduce chance of match
-    # left detection to the right of the right detection (exponential curve?)
-    # not dependent on size
-    xpscore = exp(-2*(bb1.x - bb2.x - 0.05)**2)
+    xascore = exp(-dw**2/wsq)
+    yascore = exp(-dh**2/hsq)
 
-    return(xpscore * ypscore * xascore * yascore)
+    # difference in y direction should be very small, multiply by 3
+    ypscore = exp(-dy**2/hsq*3)
+    # x1 should be right of x2, difference can be substantial and independent of bbox size
+    xpscore = exp(-2*(x1 - x2 - 0.05)**2)
+
+    pscore = 0.4 + min(0.6, bb1.pr, bb2.pr)
+
+    return(xpscore * ypscore * xascore * yascore * pscore)
 
 def tdist(track, bbox, scale=1): # Track x BBpairs
     """Distance between a track (i.e. its last bbox) a bbox"""
