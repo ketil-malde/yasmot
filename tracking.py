@@ -45,6 +45,11 @@ def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
 
     return(xpscore * ypscore * xascore * yascore * pscore)
 
+def bbdist_pair(bbsA, bbsB, scale):
+    """Distance between pairs of bboxes, return averages of distances"""
+    # and if None?
+    return 0.5*(bbdist_track(bbsA[0], bbsB[0], scale) + bbdist_track(bbsA[1], bbsB[1], scale))
+
 def bbdist_stereo(bb1, bb2, scale=1):
     """Calculate distance between bboxes in left and right stereo frames"""
 
@@ -128,12 +133,12 @@ def xconsensus(bbs):
 
 from parse import parse
 
-def assign(bbs, tracks, scale, append_threshold = 0.1):
+def assign(bbs, tracks, scale, metric, append_threshold = 0.1):
     """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         for b in range(len(bbs)):
-            s = bbdist_track(tracks[t].bblist[-1], bbs[b], scale)
+            s = metric(tracks[t].bblist[-1], bbs[b], scale)
             tmx[t,b] = s
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
@@ -162,14 +167,14 @@ def assign(bbs, tracks, scale, append_threshold = 0.1):
 
     return bbs_rest, tracks, unmatched_tracks
 
-def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
+def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
     '''Use Hungarian alg to match tracks and bboxes'''
     iou_merge_threshold = 0.8
     old_track_limit     = 5
 
     ##################################################
     # Step one: match bbs'es to existing tracks
-    bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale)
+    bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale, metric)
     # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bblist])}, unmatched {len([b for t in first_unmatched for b in t.bblist])}')
 
     ##################################################
@@ -194,7 +199,7 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale):
         ot = []
         for i in range(ot_lim): ot.append(old_tracks.pop(0))
 
-        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot, scale)
+        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot, scale, metric)
         for m in matched:
             tracks.append(m)
 

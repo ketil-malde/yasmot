@@ -138,14 +138,14 @@ def merge_frames(fs):
 
 from tracking import tmatch
 
-def track(frames):
+def track(frames, metric):
     """Track single cam frames."""
     tracks = []
     old_tracks = []
     for f in frames:
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale) # match bboxes to tracks (tmatch)
+        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale, metric) # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks+old_tracks # sorted by time?
 
@@ -209,9 +209,14 @@ if __name__ == '__main__':
     # print(f'*** Read number of frames: {len(res1)}, total bboxes {len([b for f in res1 for b in f.bboxes])}')
     ##################################################
     # Perform tracking
+    from tracking import bbdist_track, bbdist_pair
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
-        ts = track(res1)
+        if args.stereo:
+            metric = bbdist_pair
+        else:
+            metric = bbdist_track
+        ts = track(res1, metric)
         def firstframe(t): return t.bblist[0].frameid
         ts.sort(key=firstframe)
 
