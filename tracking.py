@@ -47,8 +47,10 @@ def bbdist_track(bb1, bb2, scale): # BBox x BBox -> Float
 
 def bbdist_pair(bbsA, bbsB, scale):
     """Distance between pairs of bboxes, return averages of distances"""
-    # and if None?
-    return 0.5*(bbdist_track(bbsA[0], bbsB[0], scale) + bbdist_track(bbsA[1], bbsB[1], scale))
+
+    d1 = 0 if bbsA[0] is None or bbsB[0] is None else bbdist_track(bbsA[0], bbsB[0], scale) 
+    d2 = 0 if bbsA[1] is None or bbsB[1] is None else bbdist_track(bbsA[1], bbsB[1], scale)
+    return 0.5*(d1+d2)
 
 def bbdist_stereo(bb1, bb2, scale=1):
     """Calculate distance between bboxes in left and right stereo frames"""
@@ -255,6 +257,7 @@ def summarize_probs(assoc):
     totp += exp(other-maxlogit)
     return cur, 1/totp, res
 
+from definitions import frameid, setid
 def process_tracks(tracks, interpolate=False):
     """Turn a set of tracks back into a set of frames, and a set of
        annotations, where each bbox is ID'ed with track number"""
@@ -264,10 +267,10 @@ def process_tracks(tracks, interpolate=False):
     tnum = 0
     tstats = {}
     for t in tracks:
-        curframe = t.bblist[0].frameid
+        curframe = frameid(t.bblist[0])
 
         # output all frames from cur until caught up
-        def first(c): return c[0].frameid
+        def first(c): return frameid(c[0])
         if cur != []:
             myfid = min([first(c) for c in cur])
             while myfid < curframe:
@@ -281,12 +284,14 @@ def process_tracks(tracks, interpolate=False):
                 if cur == []: break
                 myfid = min([first(c) for c in cur])
 
-        def setid(bbox, label): return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
         cur.insert(0,[setid(b,str(tnum)) for b in t.bblist])
         tstats[tnum] = {}
-        for b in t.bblist: tstats[tnum][b.cls] = []
-        for b in t.bblist: tstats[tnum][b.cls].append(b.pr)
-        # how to summarize this?
+        if type(t.bblist[0]) is tuple:
+            tbl = [b[0]for b in t.bblist if b[0] is not None] + [b[1] for b in t.bblist if b[1] is not None]
+        else:
+            tbl = t.bblist 
+        for b in tbl: tstats[tnum][b.cls] = []
+        for b in tbl: tstats[tnum][b.cls].append(b.pr)
         tnum += 1
 
     # process rest of cur (copy from above)

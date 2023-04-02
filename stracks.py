@@ -210,14 +210,18 @@ if __name__ == '__main__':
     ##################################################
     # Perform tracking
     from tracking import bbdist_track, bbdist_pair
+    from definitions import frameid
+
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
         if args.stereo:
             metric = bbdist_pair
+            # def firstframe(t): return t.bblist[0][0].frameid if t.bblist[0][0] is not None else t.bblist[0][1].frameid
         else:
             metric = bbdist_track
+        def firstframe(t): return frameid(t.bblist[0])
+
         ts = track(res1, metric)
-        def firstframe(t): return t.bblist[0].frameid
         ts.sort(key=firstframe)
 
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')
