@@ -72,10 +72,6 @@ def bbdist_stereo(bb1, bb2, scale=1):
 
     return(xpscore * ypscore * xascore * yascore * pscore)
 
-def tdist(track, bbox, scale=1): # Track x BBpairs
-    """Distance between a track (i.e. its last bbox) a bbox"""
-    return bbdist_track(track.bblist[-1], bbox, scale)
-
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
@@ -137,7 +133,7 @@ def assign(bbs, tracks, scale, append_threshold = 0.1):
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         for b in range(len(bbs)):
-            s = tdist(tracks[t], bbs[b], scale)
+            s = bbdist_track(tracks[t].bblist[-1], bbs[b], scale)
             tmx[t,b] = s
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
