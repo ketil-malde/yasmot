@@ -264,7 +264,6 @@ def process_tracks(tracks, interpolate=False):
     # assumption: tracks sorted by first frameid
     frames = []
     cur = []     # [[BBox]]
-    tnum = 0
     tstats = {}
     for t in tracks:
         curframe = frameid(t.bblist[0])
@@ -284,15 +283,14 @@ def process_tracks(tracks, interpolate=False):
                 if cur == []: break
                 myfid = min([first(c) for c in cur])
 
-        cur.insert(0,[setid(b,str(tnum)) for b in t.bblist])
-        tstats[tnum] = {}
+        cur.insert(0,[setid(b,str(t.trackid)) for b in t.bblist])
+        tstats[t.trackid] = {}
         if type(t.bblist[0]) is tuple:
             tbl = [b[0]for b in t.bblist if b[0] is not None] + [b[1] for b in t.bblist if b[1] is not None]
         else:
             tbl = t.bblist 
-        for b in tbl: tstats[tnum][b.cls] = []
-        for b in tbl: tstats[tnum][b.cls].append(b.pr)
-        tnum += 1
+        for b in tbl: tstats[t.trackid][b.cls] = []
+        for b in tbl: tstats[t.trackid][b.cls].append(b.pr)
 
     # process rest of cur (copy from above)
     while cur != []:
