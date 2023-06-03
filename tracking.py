@@ -263,27 +263,29 @@ def process_tracks(tracks, interpolate=False):
        annotations, where each bbox is ID'ed with track number"""
     # assumption: tracks sorted by first frameid
     frames = []
-    cur = []     # [[BBox]]
+    cur = []     # [[BBox]] - list of tracks currently being processed
     tstats = {}
     for t in tracks:
-        curframe = frameid(t.bblist[0])
-
         # output all frames from cur until caught up
         def first(c): return frameid(c[0])
         if cur != []:
+            # generate all frames up to the start of track t
             myfid = min([first(c) for c in cur])
-            while myfid < curframe:
-                # select out all myfids and build frame
+            while myfid < first(t.bblist):
+                # select out all bboxes matching myfid and add the frame
                 mybbs = [c[0] for c in cur if first(c) == myfid]
                 frames.append(Frame(frameid=myfid, bboxes=mybbs))
-                # purge myfids from cur
+                # remove the bboxes in this frame from cur
                 c0 = [c[1:] for c in cur if first(c) == myfid]
                 rest = [c for c in cur if first(c) != myfid]
-                cur = [c for c in c0 + rest if c != []]
+                cur = [c for c in c0 + rest if c != []] # keep all non-empty tracks
                 if cur == []: break
                 myfid = min([first(c) for c in cur])
 
+        # replace class with trackid and add new track t to cur
         cur.insert(0,[setid(b,str(t.trackid)) for b in t.bblist])
+
+        # add statistics for track t
         tstats[t.trackid] = {}
         if type(t.bblist[0]) is tuple:
             tbl = [b[0]for b in t.bblist if b[0] is not None] + [b[1] for b in t.bblist if b[1] is not None]
@@ -292,7 +294,7 @@ def process_tracks(tracks, interpolate=False):
         for b in tbl: tstats[t.trackid][b.cls] = []
         for b in tbl: tstats[t.trackid][b.cls].append(b.pr)
 
-    # process rest of cur (copy from above)
+    # out of tracks, process rest of cur (copy from above)
     while cur != []:
         myfid = min([first(c) for c in cur])
         mybbs = [c[0] for c in cur if first(c) == myfid]
