@@ -49,6 +49,8 @@ def make_args_parser():
     parser.add_argument('--time_pattern', '-t', default='{}', type=str,
                         help="""Pattern to extract time from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
+    parser.add_argument('--interpolate', default=False, type=bool_flag, help="""Generate virtual detections by interpolating""")
+
     parser.add_argument('--shape', default=(1228,1027), type=intpair, help="""Image dimensions, width and height.""")    
     parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
 
@@ -226,7 +228,6 @@ if __name__ == '__main__':
 
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')
 
-        # todo: interpolate dummy detections in tracks
         # maybe eliminate very short tracks?
         if True:
             for x in ts:
@@ -235,7 +236,7 @@ if __name__ == '__main__':
                     print(bbshow(b))
                 print('')
 
-        fs, ss = process_tracks(ts)
+        fs, ss = process_tracks(ts, args.interpolate)
         output('# '+rnheader)
         for f in fs:
             for b in f.bboxes:

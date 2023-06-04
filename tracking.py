@@ -258,7 +258,65 @@ def summarize_probs(assoc):
     return cur, 1/totp, res
 
 from definitions import frameid, setid
-def process_tracks(tracks, interpolate=False):
+
+def first(c): return frameid(c[0])
+
+def inject(fids, f0, f1):
+    '''Generate num bboxes between f0 and f1'''
+    res = []
+    num = len(fids)
+    dx = (f1.x - f0.x)/num
+    dy = (f1.y - f0.y)/num
+    dw = (f1.w - f0.w)/num
+    dh = (f1.h - f0.h)/num
+    for i in range(num):
+        if i==0:
+            res.append(f0)
+        else:
+            res.append(BBox(frameid=fids[i], x=f0.x+i*dx, y=f0.y+i*dy, w=f0.w+i*dw, h=f0.h+i*dw, cls=f0.cls, pr=0))
+    return res
+
+# All input tracks have the same next frameid, but may have gaps after it
+# So find the max next frameid, and fill in the gaps.
+def interpolate(cur_tracks):
+    """Find all frameids less than max visible frameid,
+       then push virtual detections on top of all tracks"""
+
+    # process only tracks longer than one
+    nz_cur_tracks = [c for c in cur_tracks if len(c) > 1] # filter(lambda c: len(c)>1, cur_tracks)
+
+    # add all single item tracks
+    res = []
+    for c in filter(lambda c: len(c)==1, cur_tracks):
+        res.append(c)
+
+    # early bailout if no tracks        
+    if nz_cur_tracks == []:
+        return res
+        
+    maxfid = max([frameid(c[1]) for c in nz_cur_tracks])
+    allfids = set()
+    for c in nz_cur_tracks:
+        i = 0
+        myfid = frameid(c[i])
+        while myfid <= maxfid and i<len(c):
+            allfids.add(myfid)
+            myfid = frameid(c[i])
+            i += 1
+        allfids.add(myfid)
+    fid_list = sorted(allfids)
+
+    # Now populate them
+    for c in nz_cur_tracks:
+        ix = fid_list.index(frameid(c[1]))
+        if ix != 1:
+            res.append(inject(fid_list[:ix], c[0], c[1]) + c[1:])
+        else:
+            res.append(c)
+
+    return res
+
+def process_tracks(tracks, interpol=False):
     """Turn a set of tracks back into a set of frames, and a set of
        annotations, where each bbox is ID'ed with track number"""
     # assumption: tracks sorted by first frameid
@@ -267,18 +325,19 @@ def process_tracks(tracks, interpolate=False):
     tstats = {}
     for t in tracks:
         # output all frames from cur until caught up
-        def first(c): return frameid(c[0])
         if cur != []:
-            # generate all frames up to the start of track t
             myfid = min([first(c) for c in cur])
+            if interpol:
+                cur=interpolate(cur)
+            # generate all frames up to the start of track t
             while myfid < first(t.bblist):
                 # select out all bboxes matching myfid and add the frame
-                mybbs = [c[0] for c in cur if first(c) == myfid]
-                frames.append(Frame(frameid=myfid, bboxes=mybbs))
-                # remove the bboxes in this frame from cur
-                c0 = [c[1:] for c in cur if first(c) == myfid]
+                this = [c for c in cur if first(c) == myfid]
                 rest = [c for c in cur if first(c) != myfid]
-                cur = [c for c in c0 + rest if c != []] # keep all non-empty tracks
+                frames.append(Frame(frameid=myfid, bboxes=[c[0] for c in this]))
+
+                # remove the bboxes in this frame from cur
+                cur = [c for c in [c[1:] for c in this] + rest if c != []] # keep all non-empty tracks
                 if cur == []: break
                 myfid = min([first(c) for c in cur])
 
@@ -297,12 +356,12 @@ def process_tracks(tracks, interpolate=False):
     # out of tracks, process rest of cur (copy from above)
     while cur != []:
         myfid = min([first(c) for c in cur])
-        mybbs = [c[0] for c in cur if first(c) == myfid]
-        frames.append(Frame(frameid=myfid, bboxes=mybbs))
-        # purge myfids from cur
-        c0 = [c[1:] for c in cur if first(c) == myfid]
+        if interpol:
+            cur = interpolate(cur)
+        this = [c for c in cur if first(c) == myfid]
         rest = [c for c in cur if first(c) != myfid]
-        cur = [c for c in c0 + rest if c != []]
+        frames.append(Frame(frameid=myfid, bboxes=[c[0] for c in this]))
+        cur = [c for c in [c[1:] for c in this] + rest if c != []]
 
     return frames, tstats
 

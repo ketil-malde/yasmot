@@ -24,6 +24,7 @@ ed53fccebf70e9b200b48e94343e5bd14290fc31 python3 stracks.py -s --track=0 --shape
 77db6356a284b4f61553acab2f3993e769dd93d6 python3 stracks.py tests/lab2
 bc22a05c6283c68483bce2d5967eabc116a319f3 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 cbc79d570df3c7d586d344534864cef72ea7d4ba python3 stracks.py tests/error3.csv
+2f1d0711a7e6c3206b4484d1a1983628e8c494c1 python3 stracks.py tests/lab2 --interpolate=True
 EOF
 
 exit $status
