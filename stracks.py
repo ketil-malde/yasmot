@@ -10,15 +10,6 @@
 
 import argparse
 
-def bool_flag(s):
-    """Parse boolean arguments from the command line."""
-    if s.lower() in {"off", "false", "0"}:
-        return False
-    elif s.lower() in {"on", "true", "1"}:
-        return True
-    else:
-        raise argparse.ArgumentTypeError("invalid value for a boolean flag")
-
 from parse import parse
 
 def intpair(s):
@@ -42,14 +33,14 @@ def make_args_parser():
         help="""Process stereo images.""")
 
     # Tracking
-    parser.add_argument('--track', default='True', type=bool_flag,
+    parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
         help="""Generate tracks from video frames or seuqential stills.""")
     parser.add_argument('--max_age', '-m', default=None, type=int,
                         help="""Maximum age to search for old tracks to resurrect.""")
     parser.add_argument('--time_pattern', '-t', default='{}', type=str,
                         help="""Pattern to extract time from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
-    parser.add_argument('--interpolate', default=False, type=bool_flag, help="""Generate virtual detections by interpolating""")
+    parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
 
     parser.add_argument('--shape', default=(1228,1027), type=intpair, help="""Image dimensions, width and height.""")    
     parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
