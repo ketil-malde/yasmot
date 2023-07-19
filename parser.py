@@ -58,7 +58,7 @@ def parse_retina(fname, shape): # File -> [Frame]
 def read_frames(fn, shape=(1228,1027)):
     """Read all frames from a file (RetinaNet format) or directory (YOLO)"""
     if not exists(fn):
-        print(f'No such file or directory: {fn}')
+        print(f'No such file or directory: {fn}', file=sys.stderr)
         sys.exit(-1)
 
     if isdir(fn): # yolo
@@ -92,14 +92,14 @@ def write_rn(of, fs, shape=(1228,1027)):
 import os
 def write_frames(outfile, fs):
     if exists(outfile): # does this handle trailing slash?
-        print(f'{outfile} already exists - aborting.')
+        print(f'{outfile} already exists - aborting.', file=sys.stderr)
     elif outfile[-1] == '/':
         os.mkdir(outfile)
         write_yolo(outfile, fs)
     elif outfile[-4:] == '.csv':
         write_rn(outfile, fs)
     else:
-        print('Specify an outfile ending in .csv or /')
+        print('Specify an outfile ending in .csv or /', file=sys.stderr)
     
 # Testing
 import sys

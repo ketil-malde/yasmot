@@ -6,6 +6,8 @@
 # To generate explicit oututs:
 # grep py...3 test.sh | while read s cmd; do echo $cmd; $(echo $cmd) > tests_out/$s.out; done
 
+set -e -o pipefail
+
 status=0
 while read sum cmd; do
     echo -n "$cmd ... "
