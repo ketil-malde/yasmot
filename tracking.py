@@ -52,7 +52,7 @@ def bbdist_pair(bbsA, bbsB, scale):
     d2 = 0 if bbsA[1] is None or bbsB[1] is None else bbdist_track(bbsA[1], bbsB[1], scale)
     return 0.5*(d1+d2)
 
-def bbdist_stereo(bb1, bb2, scale=1):
+def bbdist_stereo(bb1, bb2, scale):
     """Calculate distance between bboxes in left and right stereo frames"""
 
     x1, y1, w1, h1 = bb1.x, bb1.y, bb1.w, bb1.h
@@ -83,12 +83,12 @@ from scipy.optimize import linear_sum_assignment
 import numpy as np
 
 # Used only for stereo tracks, I think?
-def bbmatch(f1, f2, threshold=0.1, metric=bbdist_track): # [BBox] x [BBox] -> [(BBox,BBox)]
+def bbmatch(f1, f2, metric, scale, threshold=0.1): # tresh=0.1, metric=bbdist_track # [BBox] x [BBox] -> [(BBox,BBox)]
     """Match bboxes from two frames."""
     mx = np.empty((len(f1), len(f2)))
     for a in range(len(f1)):
         for b in range(len(f2)):
-            mx[a,b] = metric(f1[a], f2[b])
+            mx[a,b] = metric(f1[a], f2[b], scale=scale)
     aind, bind = linear_sum_assignment(mx, maximize=True)
     # print(aind, bind)
     res = []

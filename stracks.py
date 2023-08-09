@@ -49,7 +49,7 @@ def make_args_parser():
                         help='Files or directories to process')
     return parser
 
-from tracking import bbmatch, bbdist_stereo
+from tracking import bbmatch, bbdist_stereo, bbdist_track
 from definitions import BBox, Frame
 import sys
 
@@ -115,7 +115,7 @@ def consensus_frame(tup): # (Frame a,..) -> Frame a
             error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
         else:
             i = i+1  # todo: whops, only if not None
-            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes)]
+            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
             if False: # debugging
                 for t in tup:
                     print('***',t)
@@ -126,7 +126,7 @@ def consensus_frame(tup): # (Frame a,..) -> Frame a
 def merge_frames(fs):
     (f1,f2) = fs
     assert f1.frameid == f2.frameid, f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}"
-    bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo)
+    bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo, scale=1)
     return Frame(frameid = f1.frameid, bboxes = bbpairs)
 
 from tracking import tmatch
@@ -244,7 +244,7 @@ if __name__ == '__main__':
             for a,b in x.bboxes: # assuming -s here?
                 astr = bbshow(a) if a is not None else dashes
                 bstr = bbshow(b) if b is not None else dashes
-                dist = str(bbdist_stereo(a,b)) if a is not None and b is not None else "n/a"
+                dist = str(bbdist_stereo(a,b,args.scale)) if a is not None and b is not None else "n/a"
                 output(astr+"\t"+bstr+"\t"+dist)
     else:
         show_frames(res1)
