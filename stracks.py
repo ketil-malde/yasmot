@@ -78,44 +78,49 @@ def zip_frames(lists):
         lists = tails
     return results
 
-def consensus_frame(tup): # (Frame a,..) -> Frame a
+def consensus_frame(tup):
     """Build consensus for a tuple of frames"""
 
-    def consensus(bbpair,i):  # todo: use tracking.consensus instead?
+    def consensus(bbpair,i,n):
         """Merge two bboxes"""
         bb1, bb2 = bbpair
-        if bb1 is None:  return bb2
-        if bb2 is None:  return bb1
-        fid = bb1.frameid
-        a = i/(i+1)
-        b = 1/(i+1)
-        x = a*bb1.x + b*bb2.x
-        y = a*bb1.y + b*bb2.y
-        w = a*bb1.w + b*bb2.w
-        h = a*bb1.h + b*bb2.h
+        
+        a = i/(i+1) # weight_current (bb1)
+        b = 1/(i+1) # weight_next (bb2)
 
-        # this is probably not technically correct?  Use summarize_probs!
-        if bb1.cls == bb2.cls:
-            cl = bb1.cls
-            p = bb1.pr + bb2.pr
-        elif bb1.pr > bb2.pr:
-            cl = bb1.cls
-            p = bb1.pr - bb2.pr
+        if bb1 is None:
+            fid = bb2.frameid
+            x,y,w,h,cl = bb2.x, bb2.y, bb2.w, bb2.h, bb2.cls
+            p = bb2.pr*b
+        elif bb2 is None:
+            fid = bb1.frameid
+            x,y,w,h,cl = bb1.x, bb1.y, bb1.w, bb1.h, bb1.cls
+            p = bb1.pr*a
         else:
-            cl = bb2.cls
-            p = bb2.pr - bb1.pr
+            fid = bb1.frameid            
+            x = a*bb1.x + b*bb2.x
+            y = a*bb1.y + b*bb2.y
+            w = a*bb1.w + b*bb2.w
+            h = a*bb1.h + b*bb2.h
+
+            if bb1.cls == bb2.cls:
+                assoc = {bb1.cls: [bb1.pr, bb2.pr]}
+            else:
+                assoc = {bb1.cls: [bb1.pr], bb2.cls: [bb2.pr]}
+            cl, p, res = summarize_probs(assoc, num_classes=n)
             
         return BBox(fid,x,y,w,h,cl,p)
 
     myframe=tup[0].frameid
     mybboxes=tup[0].bboxes
+    num_classes = len(tup)
     i = 0
     for t in tup[1:]:
         if t.frameid != myframe:
             error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
         else:
             i = i+1  # todo: whops, only if not None
-            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
+            mybboxes = [consensus(pair, i, num_classes) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
             if False: # debugging
                 for t in tup:
                     print('***',t)

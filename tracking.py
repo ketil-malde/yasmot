@@ -82,8 +82,8 @@ def bbdist_stereo(bb1, bb2, scale):
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
-# Used only for stereo tracks, I think?
-def bbmatch(f1, f2, metric, scale, threshold=0.1): # tresh=0.1, metric=bbdist_track # [BBox] x [BBox] -> [(BBox,BBox)]
+# Used for stereo tracks and consensus annotations
+def bbmatch(f1, f2, metric, scale, threshold=0.1): # [BBox] x [BBox] -> [(BBox,BBox)]
     """Match bboxes from two frames."""
     mx = np.empty((len(f1), len(f2)))
     for a in range(len(f1)):
@@ -92,7 +92,7 @@ def bbmatch(f1, f2, metric, scale, threshold=0.1): # tresh=0.1, metric=bbdist_tr
     aind, bind = linear_sum_assignment(mx, maximize=True)
     # print(aind, bind)
     res = []
-    # todo: filter on threshold
+    # Filter on threshold:
     for i in range(len(aind)):
         if mx[aind[i],bind[i]] > threshold:
             res.append( (f1[aind[i]],f2[bind[i]]) )
@@ -219,19 +219,22 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
 
 from math import log
 
-def summarize_probs(assoc):
+def summarize_probs(assoc, num_classes=None): # TODO: ignore=None
     """From an assoc array of class -> [probs], calculate consensus prob"""
     # should probably take into account autoregressive properties and whatnot, but...
     res = {}
-    num = len(assoc)+1
-    other = 0  # maintain an "other" category
+    if num_classes is None:
+        num = len(assoc)+1
+    else:
+        num = num_classes
+    other = 0.0  # maintain an "other" category
     for cl in assoc:
-        res[cl] = 0
+        res[cl] = 0.0
     # for each prob p:
     #   multiply the corresponding res with p
     #   multipy all other classes plus the 'other' class with (1-p)/n
     for cl in assoc:
-        # print('- ', cl,assoc[cl])
+        # print('- ', cl, assoc[cl])
         for r in res:
             for p in assoc[cl]:
                 if p<=0 or p>1:
