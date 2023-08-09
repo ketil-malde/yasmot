@@ -68,8 +68,8 @@ def zip_frames(lists):
 
         for i in range(len(heads)):
             if heads[i] is None:
-                continue
-            if heads[i].frameid == myframe:
+                res.append(Frame(frameid=myframe,bboxes=[]))
+            elif heads[i].frameid == myframe:
                 res.append(heads[i])
             else:
                 res.append(Frame(frameid=myframe,bboxes=[]))
