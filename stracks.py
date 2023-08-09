@@ -102,13 +102,9 @@ def consensus_frame(tup):
             y = a*bb1.y + b*bb2.y
             w = a*bb1.w + b*bb2.w
             h = a*bb1.h + b*bb2.h
+            p = bb1.pr*a + bb2.pr*b
+            cl = bb1.cls if bb1.pr*a > bb2.pr*b else bb2.cls
 
-            if bb1.cls == bb2.cls:
-                assoc = {bb1.cls: [bb1.pr, bb2.pr]}
-            else:
-                assoc = {bb1.cls: [bb1.pr], bb2.cls: [bb2.pr]}
-            cl, p, res = summarize_probs(assoc, num_classes=n)
-            
         return BBox(fid,x,y,w,h,cl,p)
 
     myframe=tup[0].frameid
