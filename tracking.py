@@ -296,7 +296,10 @@ def interpolate(cur_tracks):
     # early bailout if no tracks        
     if nz_cur_tracks == []:
         return res
-        
+
+    # build fidlist: a list of all seen frames until maxfid
+    # TODO: for serial numbers, interpolate unseen frames as well?
+    # POSSIBLE WORKAROUND: generate empty annotation files and include them?
     maxfid = max([frameid(c[1]) for c in nz_cur_tracks])
     allfids = set()
     for c in nz_cur_tracks:
@@ -311,11 +314,14 @@ def interpolate(cur_tracks):
 
     # Now populate them
     for c in nz_cur_tracks:
-        ix = fid_list.index(frameid(c[1]))
-        if ix != 1:
-            res.append(inject(fid_list[:ix], c[0], c[1]) + c[1:])
-        else:
+        ix0 = fid_list.index(frameid(c[0]))
+        ix1 = fid_list.index(frameid(c[1]))
+        if ix1 - ix0 > 1:
+            res.append(inject(fid_list[ix0:ix1], c[0], c[1]) + c[1:])
+        elif ix1 - ix0 == 1:
             res.append(c)
+        else:
+            assert False, "Interpolation: negative number of frames to insert?"
 
     return res
 
