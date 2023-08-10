@@ -178,29 +178,30 @@ if __name__ == '__main__':
         error('Unsupported combination of arguments:\n'+str(args))
 
     ##################################################
-    # Read in the detections as a stream of stereo frames, consensus frames, or just frames
+    # Read in the detections as a stream of stereo frames
     elif args.stereo:
-        if len(args.FILES) != 2:
-            error(f'Wrong number of files {len(args.FILES)} instead of 2.')
-        else:
+        if len(args.FILES) == 2:
             [fr_left, fr_right] = [read_frames(f, shape=args.shape) for f in args.FILES]
             res1 = []
             for t in zip_frames([fr_left, fr_right]):
                 res1.append(merge_frames(t))
-
+        else:
+            error(f'Wrong number of files {len(args.FILES)} instead of 2.')
+    ##################################################
+    # Read a list of annotations to construct consensus frames
     elif args.consensus:
         fs = [read_frames(f, shape=args.shape) for f in args.FILES]
         res1 = []
         for t in zip_frames(fs):
             res1.append(consensus_frame(t))
-        # output and/or do tracking
-
+    ##################################################
+    # Just a regular annotation file/directory
     else:
-        if len(args.FILES) > 1:
+        if len(args.FILES) == 1:
+            res1 = read_frames(args.FILES[0], shape=args.shape)
+        else:
             error(f'Too many files, consider -s or -c')
-        res1 = read_frames(args.FILES[0], shape=args.shape)
 
-    # print(f'*** Read number of frames: {len(res1)}, total bboxes {len([b for f in res1 for b in f.bboxes])}')
     ##################################################
     # Perform tracking
     from tracking import bbdist_track, bbdist_pair
