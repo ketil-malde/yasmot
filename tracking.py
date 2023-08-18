@@ -219,7 +219,7 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
 
 from math import log
 
-def summarize_probs(assoc, num_classes=None): # TODO: ignore=None
+def summarize_probs(assoc, num_classes=None, unknown=None): # TODO: ignore=None
     """From an assoc array of class -> [probs], calculate consensus prob"""
     # should probably take into account autoregressive properties and whatnot, but...
     res = {}
@@ -249,11 +249,13 @@ def summarize_probs(assoc, num_classes=None): # TODO: ignore=None
                 other      += log((1.0-p)/num)
     # return max class and prob
     cur = None
+    curmax = -999999999
     maxlogit = -999999999
     for r in res:
-        if res[r] > maxlogit: # remember the best
+        if res[r] > maxlogit: maxlogit = res[r]
+        if res[r] > curmax and r != unknown:
             cur = r
-            maxlogit = res[r]
+            curmax = res[r]
     totp = 0
     for r in res:
         totp += exp(res[r]-maxlogit)

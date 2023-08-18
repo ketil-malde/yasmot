@@ -41,7 +41,7 @@ def make_args_parser():
                         help="""Pattern to extract time from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
     parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
-
+    parser.add_argument('--unknown_class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
     parser.add_argument('--shape', default=(1228,1027), type=intpair, help="""Image dimensions, width and height.""")    
     parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
 
@@ -78,10 +78,10 @@ def zip_frames(lists):
         lists = tails
     return results
 
-def consensus_frame(tup):
+def consensus_frame(tup, unknown=None):
     """Build consensus for a tuple of frames"""
 
-    def consensus(bbpair,i,n):
+    def consensus(bbpair,i):
         """Merge two bboxes"""
         bb1, bb2 = bbpair
         
@@ -90,11 +90,11 @@ def consensus_frame(tup):
 
         if bb1 is None:
             fid = bb2.frameid
-            x,y,w,h,cl = bb2.x, bb2.y, bb2.w, bb2.h, bb2.cls
+            x,y,w,h,cl = bb2.x, bb2.y, bb2.w, bb2.h, bb2.cls if type(bb2.cls) is list else [(bb2.cls,bb2.pr)]
             p = bb2.pr*b
         elif bb2 is None:
             fid = bb1.frameid
-            x,y,w,h,cl = bb1.x, bb1.y, bb1.w, bb1.h, bb1.cls
+            x,y,w,h,cl = bb1.x, bb1.y, bb1.w, bb1.h, bb1.cls if type(bb1.cls) is list else [(bb1.cls,bb1.pr)]
             p = bb1.pr*a
         else:
             fid = bb1.frameid            
@@ -103,26 +103,31 @@ def consensus_frame(tup):
             w = a*bb1.w + b*bb2.w
             h = a*bb1.h + b*bb2.h
             p = bb1.pr*a + bb2.pr*b
-            cl = bb1.cls if bb1.pr*a > bb2.pr*b else bb2.cls
-
+            cl = bb1.cls
+            cl.append((bb2.cls,bb2.pr))
         return BBox(fid,x,y,w,h,cl,p)
 
+    def select_class(cplist):
+        res = {}
+        for (c,p) in cplist:
+            if c not in res:
+                res[c] = [p]
+            else:
+                res[c].append(p)
+        cls,_1,_2 = summarize_probs(res, unknown=unknown)
+        return unknown if cls is None else cls
+    
     myframe=tup[0].frameid
-    mybboxes=tup[0].bboxes
-    num_classes = len(tup)
+    mybboxes=[bb._replace(cls=[(bb.cls,bb.pr)]) for bb in tup[0].bboxes]
+
     i = 0
     for t in tup[1:]:
         if t.frameid != myframe:
             error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
         else:
             i = i+1  # todo: whops, only if not None
-            mybboxes = [consensus(pair, i, num_classes) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
-            if False: # debugging
-                for t in tup:
-                    print('***',t)
-                print(mybboxes,'\n')
-                # todo: adjust probs into something meaningful (divide by len tup?)
-    return Frame(frameid=myframe, bboxes=mybboxes)
+            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
+    return Frame(frameid=myframe, bboxes=[bb._replace(cls=select_class(bb.cls)) for bb in mybboxes])
  
 def merge_frames(fs):
     (f1,f2) = fs
@@ -193,14 +198,16 @@ if __name__ == '__main__':
         fs = [read_frames(f, shape=args.shape) for f in args.FILES]
         res1 = []
         for t in zip_frames(fs):
-            res1.append(consensus_frame(t))
+            res1.append(consensus_frame(t, args.unknown_class))
     ##################################################
     # Just a regular annotation file/directory
     else:
         if len(args.FILES) == 1:
             res1 = read_frames(args.FILES[0], shape=args.shape)
+        elif len(args.FILES) > 1:
+            error(f'Too many files, maybe you meant -s or -c?')
         else:
-            error(f'Too many files, consider -s or -c')
+            error('No files specified?  Use --help for help.')
 
     ##################################################
     # Perform tracking
