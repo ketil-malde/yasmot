@@ -19,7 +19,7 @@ def bbshow(b):
     else: return f'{b.frameid}\t{bbshow1(b)}'
 
 def getcls(b):
-    if type(b) is tuple: return b[0].cls
+    if type(b) is tuple: return b[0].cls if b[0] is not None else b[1].cls
     else: return b.cls
 
 def frameid(b):
