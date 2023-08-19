@@ -154,7 +154,7 @@ def strack(frames):
 
 from parser import read_frames, show_frames
 from tracking import summarize_probs, process_tracks
-from definitions import bbshow, error
+from definitions import bbshow, error, getcls
 
 if __name__ == '__main__':
     g_trackno = 0
@@ -236,14 +236,17 @@ if __name__ == '__main__':
                     print(bbshow(b))
                 print('')
 
-        fs, ss = process_tracks(ts, args.interpolate)
         output('# '+rnheader)
-        for f in fs:
-            for b in f.bboxes:
-                output(bbshow(b))
+        fs, ss = process_tracks(ts, args.interpolate)
+        track_ann = {}
         for s in ss:
             cls,prb,res = summarize_probs(ss[s])
+            track_ann[s] = cls
             tracks_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
+        for f in fs:
+            for b in f.bboxes:
+                # todo: output class too
+                output(bbshow(b)+f'\t{getcls(b)}')
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])

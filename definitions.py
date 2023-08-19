@@ -18,6 +18,10 @@ def bbshow(b):
     if type(b) is tuple: return bbshow2(b)
     else: return f'{b.frameid}\t{bbshow1(b)}'
 
+def getcls(b):
+    if type(b) is tuple: return b[0].cls
+    else: return b.cls
+
 def frameid(b):
     if type(b) is tuple: return b[0].frameid if b[0] is not None else b[1].frameid
     else: return b.frameid
