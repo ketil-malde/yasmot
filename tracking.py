@@ -250,16 +250,19 @@ def summarize_probs(assoc, num_classes=None, unknown=None): # TODO: ignore=None
     # return max class and prob
     cur = None
     curmax = -999999999
-    maxlogit = -999999999
+    maxlogit = other
     for r in res:
         if res[r] > maxlogit: maxlogit = res[r]
         if res[r] > curmax and r != unknown:
             cur = r
             curmax = res[r]
     totp = 0
-    for r in res:
-        totp += exp(res[r]-maxlogit)
-    totp += exp(other-maxlogit)
+    try:
+        for r in res:
+            totp += exp(res[r]-maxlogit)
+        totp += exp(other-maxlogit)
+    except OverflowError:
+        print(res,other)
     return cur, 1/totp, res
 
 from definitions import frameid, setid
