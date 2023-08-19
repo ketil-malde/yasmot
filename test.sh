@@ -23,11 +23,11 @@ while read sum cmd; do
 	<<EOF
 b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 parser.py tests/L.csv
 ed53fccebf70e9b200b48e94343e5bd14290fc31 python3 stracks.py -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-77db6356a284b4f61553acab2f3993e769dd93d6 python3 stracks.py tests/lab2
-bc22a05c6283c68483bce2d5967eabc116a319f3 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
-cbc79d570df3c7d586d344534864cef72ea7d4ba python3 stracks.py tests/error3.csv
-2f1d0711a7e6c3206b4484d1a1983628e8c494c1 python3 stracks.py tests/lab2 --interpolate
-8c9a0bdcc1e79d0666716646533aa8198b0932ef python3 stracks.py -c tests/consensus/y8x*
+ac8fd8659cf8bbd652886a6cf0106bd081b27ec6 python3 stracks.py tests/lab2
+13d62f1ea1f67da480f8d8fa4d289e229386b978 python3 stracks.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
+19eaeb0b0dd5eb19bc3f78b59a14b5e49e2bbe1a python3 stracks.py tests/error3.csv
+367ee297dfed7b4b46ca43fc5f847a14f2feccd5 python3 stracks.py tests/lab2 --interpolate
+5db67348f697d29f66e5ed9700f364d779ae47ce python3 stracks.py -c tests/consensus/y8x*
 EOF
 
 exit $status
