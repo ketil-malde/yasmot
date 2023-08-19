@@ -236,17 +236,18 @@ if __name__ == '__main__':
                     print(bbshow(b))
                 print('')
 
-        output('# '+rnheader)
         fs, ss = process_tracks(ts, args.interpolate)
         track_ann = {}
         for s in ss:
             cls,prb,res = summarize_probs(ss[s])
             track_ann[s] = cls
             tracks_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
+
+        output('# frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
         for f in fs:
             for b in f.bboxes:
                 # todo: output class too
-                output(bbshow(b)+f'\t{getcls(b)}')
+                output(bbshow(b)+f'\t{track_ann[int(getcls(b))]}')
 
     elif args.stereo: # not tracking, stereo frames
         # just output res1 (::[Frame])
