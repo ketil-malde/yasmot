@@ -51,8 +51,8 @@ def make_args_parser():
                         help='Files or directories to process')
     return parser
 
-from tracking import bbmatch, bbdist_stereo, bbdist_track
-from definitions import BBox, Frame
+from stracks.tracking import bbmatch, bbdist_stereo, bbdist_track
+from stracks.definitions import BBox, Frame
 import sys
 
 # what if one frame is missing?
@@ -137,7 +137,7 @@ def merge_frames(fs):
     bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo, scale=1)
     return Frame(frameid = f1.frameid, bboxes = bbpairs)
 
-from tracking import tmatch
+from stracks.tracking import tmatch
 
 def track(frames, metric):
     """Track single cam frames."""
@@ -154,11 +154,11 @@ def strack(frames):
     """Track paired bboxes from a stereo camera"""
     pass
 
-from parser import read_frames, show_frames
-from tracking import summarize_probs, process_tracks
-from definitions import bbshow, error, getcls
+from stracks.parser import read_frames, show_frames
+from stracks.tracking import summarize_probs, process_tracks
+from stracks.definitions import bbshow, error, getcls
 
-if __name__ == '__main__':
+def main():
     g_trackno = 0
 
     parser = make_args_parser()
@@ -213,8 +213,8 @@ if __name__ == '__main__':
 
     ##################################################
     # Perform tracking
-    from tracking import bbdist_track, bbdist_pair
-    from definitions import frameid
+    from stracks.tracking import bbdist_track, bbdist_pair
+    from stracks.definitions import frameid
 
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
@@ -265,3 +265,6 @@ if __name__ == '__main__':
         show_frames(res1)
 
     closeup()
+
+if __name__ == '__main__':
+    main()

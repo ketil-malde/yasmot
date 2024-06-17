@@ -1,8 +1,9 @@
 from collections import namedtuple
-
-from definitions import Track
-from parser import tobbx_yolo
 from math import exp
+
+from stracks.definitions import Track
+from stracks.parser import tobbx_yolo
+
 
 # manually inlined below for speed
 def deltas(bb1, bb2):
@@ -107,7 +108,7 @@ def bbmatch(f1, f2, metric, scale, threshold=0.1): # [BBox] x [BBox] -> [(BBox,B
     # todo: add assertion that all inputs are outputs once?
     return res
 
-from definitions import BBox, Frame, g_trackno
+from stracks.definitions import BBox, Frame, g_trackno
 
 def xconsensus(bbs):
     """Create a consensus bbox from a list of bboxes - not used?"""
@@ -265,7 +266,7 @@ def summarize_probs(assoc, num_classes=None, unknown=None): # TODO: ignore=None
         print(res,other)
     return cur, 1/totp, res
 
-from definitions import frameid, setid
+from stracks.definitions import frameid, setid
 
 def first(c): return frameid(c[0])
 

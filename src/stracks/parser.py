@@ -1,4 +1,4 @@
-from definitions import BBox, Frame
+from stracks.definitions import BBox, Frame
 
 from os import listdir
 from os.path import isdir, exists
@@ -103,7 +103,7 @@ def write_frames(outfile, fs):
     
 # Testing
 import sys
-from definitions import bbshow
+from stracks.definitions import bbshow
 
 if __name__ == "__main__":
     fs = read_frames(sys.argv[1])
