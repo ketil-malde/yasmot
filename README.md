@@ -50,13 +50,20 @@ by specifying the `-c` option.  Again you can use `--no-track` if you
 just want the frame-by-frame consensus and not perform tracking as
 well.
 
-## Usage examples
+## Controlling tracking parameters
 
+The `--scale` parameter controls how the different bounding box pairs
+are ranked when considered for tracking (or stereo matching).  The
+algorithm uses a Gaussian score for position and size, and this
+parameter controls the sharpness (or temperature) of the Gaussian.
+Generally, if you have large changes between frames (rapidly moving
+objects or low frame rate, you can try reducing this parameter.
 
-ed53fccebf70e9b200b48e94343e5bd14290fc31 python3 src/yasmot/main.py -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-a3aae3bacbfbd418d243f0a7e09bf92dae9eab9a python3 src/yasmot/main.py -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-1e856023ea79bc61decdb9499bb4f1e207b775eb python3 src/yasmot/main.py tests/lab2
-8c48b6ece4db0ea5d6925954e95214cf89fbaf22 python3 src/yasmot/main.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
-2a14b4639ce0f30a3b6ab6b6f3084ed2cb8f455a python3 src/yasmot/main.py tests/error3.csv
-b7213abfdb7352c52975d2eeef9e28ace19927ec python3 src/yasmot/main.py tests/lab2 --interpolate
-64f0161579349b6e7a431e8aab69807bf18e7a18 python3 src/yasmot/main.py -c tests/consensus/y8x*
+Tracks are maintained across missing detections, this is controlled by
+the parameter `--max_age`.  The age is determined based on the frame
+name, and unless the frame name is a plain number, the extraction can
+be specified with `--time_pattern`.
+
+In case there are classes representing an unknown or unidentified
+object, it is possible to specify the label with the `--unknown`
+parameter to avoid having this class be called as a consensus class.
