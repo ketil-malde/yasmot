@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# flake8: noqa: E704
 
 # Main program
 
@@ -170,16 +171,20 @@ def main():
     # Define (trivial) functions for generating output
     if args.output is None:
         def output(line):         sys.stdout.write(line + '\n')
+        def pred_output(line):    sys.stdout.write(line + '\n')
         def tracks_output(line):  sys.stdout.write(line + '\n')
         def closeup(): pass
     else:
-        of = open(args.output, 'w')
-        tf = open(args.output + '.tracks', 'w')
+        of = open(args.output + '.frames', 'w')
+        tf = open(args.output + '.pred', 'w')
+        tr = open(args.output + '.tracks', 'w')
         def output(line):          of.write(line + '\n')
-        def tracks_output(line):   tf.write(line + '\n')
+        def pred_output(line):   tf.write(line + '\n')
+        def tracks_output(line):   tr.write(line + '\n')
         def closeup():
             of.close()
             tf.close()
+            tr.close()
 
     if args.consensus and args.stereo:
         error('Unsupported combination of arguments:\n' + str(args))
@@ -223,6 +228,7 @@ def main():
             # def firstframe(t): return t.bblist[0][0].frameid if t.bblist[0][0] is not None else t.bblist[0][1].frameid
         else:
             metric = bbdist_track
+
         def firstframe(t): return frameid(t.bblist[0])
 
         ts = track(res1, metric)
@@ -231,19 +237,18 @@ def main():
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')
 
         # maybe eliminate very short tracks?
-        if True:
-            for x in ts:
-                print(f'Track: {x.trackid}')
-                for b in x.bblist:
-                    print(bbshow(b))
-                print('')
+        for x in ts:
+            tracks_output(f'Track: {x.trackid}')
+            for b in x.bblist:
+                tracks_output(bbshow(b))
+            tracks_output('')
 
         fs, ss = process_tracks(ts, args.interpolate)
         track_ann = {}
         for s in ss:
             cls, prb, res = summarize_probs(ss[s])
             track_ann[s] = cls
-            tracks_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
+            pred_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
         output('# frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
         for f in fs:
