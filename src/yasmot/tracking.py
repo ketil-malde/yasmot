@@ -172,8 +172,7 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
 
 def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
     '''Use Hungarian alg to match tracks and bboxes'''
-    iou_merge_threshold = 0.8
-    old_track_limit     = 5
+    old_track_limit = 5
 
     ##################################################
     # Step one: match bbs'es to existing tracks
@@ -282,7 +281,7 @@ def inject(fids, f0, f1):
         if i == 0:
             res.append(f0)
         else:
-            res.append(BBox(frameid=fids[i], x=f0.x + i * dx, y=f0.y + i * dy, w=f0.w + i * dw, h=f0.h + i * dw, cls=f0.cls, pr=0))
+            res.append(BBox(frameid=fids[i], x=f0.x + i * dx, y=f0.y + i * dy, w=f0.w + i * dw, h=f0.h + i * dh, cls=f0.cls, pr=0))
     return res
 
 # All input tracks have the same next frameid, but may have gaps after it
@@ -385,10 +384,10 @@ def test():
     f1, f2 = 'data/labels/frame_000155.txt', 'data/labels/frame_000156.txt'
     with open(f1, 'r') as f:
         ls = f.readlines()
-        boxes1 = [tobbx_yolo(f1, l) for l in ls]
+        boxes1 = [tobbx_yolo(f1, _) for _ in ls]
     with open(f2, 'r') as f:
         ls = f.readlines()
-        boxes2 = [tobbx_yolo(f2,l) for l in ls]
+        boxes2 = [tobbx_yolo(f2, _) for _ in ls]
 
     # test box pairing
     print(bbmatch(boxes1, boxes2))
