@@ -44,15 +44,18 @@ under a GPLv2 license.  In addition to tracking objects over time, it
 can link observations between left and right cameras in a stereo
 configuration, which further improves detection performance, and
 allows extracting depth information and estimate the sizes of objects.
+It has been tested on the output from RetinaNet [@lin2018focallossdenseobject] the YOLO family [@Redmon_2016_CVPR]
+of object detectors.
 
-In contrast to more complex approaches, `yasmot` works with detections
-only, linking observations across time based on position and
-dimensions of object bounding boxes and on the classification outputs. 
+In contrast to more complex approaches that rely on analyzing the
+image contents (cf. Related Work, below), `yasmot` works with
+detections only, reading observations from a separate object detector,
+and linking them across time based on the relative position and
+dimensions of bounding boxes and on the classification labels and
+confidence scores.  As a result, `yasmot` is a fast, lightweight alternative with few dependencies.
 
-...Fast, lightweight, etc few dependencies
-
-Tracking: Gaussian.
-Consensus classifications.
+Tracks are calculated by calculating distances between detections in two frames, and finding an optimal pairing using the Hungarian algorithm [@kuhn1955hungarian].
+Distances are calculated by applying a Gaussian to detection parameters (i.e., position and size coordinates) separately.  In contrast to IoU-based distances, the use of Gaussian distances allows detections to be connected even if non-overlapping, which is important for low frame rates and between stereo frames of objects close to the camera.  The sharpness of the Gaussian is controlled by the `--scale` parameters (see below).  The Hungarian algorithm solves assignment on a bipartite graph, so it can only work on two frames at a time.  It is possible to generalize it to consider multiple simultaneous frames (for instance, when calculating consensus from multiple detectors or tracking stereo images over time), but the computational cost become prohibitive and a heuristic is used instead.
 
 # Usage and options
 
@@ -104,7 +107,7 @@ well.
 
 The YOLO object detector [@Redmon_2016_CVPR] outputs image coordinates as
 fractional images, i.e. values in the range from 0 to 1.  Other object
-detectors (/e.g./, RetinaNet [@lin2018focallossdenseobject]) instead outputs a CSV file
+detectors, like RetinaNet [@lin2018focallossdenseobject], may output a CSV file
 with pixel-based coordinates.  Since `yasmot` does not require
 the images to be available, you therefore may need to specify the pixel size of
 the images, e.g. as `--shape 1228,1027` when using pixel-based coordinates.
@@ -168,12 +171,13 @@ ensemble predictions:
 # Related work
 
 <!-- from https://viso.ai/deep-learning/object-tracking/ -->
-OpenCV: BOOSTING, MIL, KCF, CSRT, MedianFlow, TLD, MOSSE, and GOTURN
-ByteTrack - integrated with Yolo
-BoT-SORT - also in Yolo
+Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL (Multiple Instance Learning), KCF (Kernelized Correlation Filters), CSRT (Channel and Spatial Reliability Tracking), MedianFlow, TLD (Tracking-Learning-Detection), MOSSE (Minimum Output Sum of Squared Error), and GOTURN (Generic Object Tracking Using Regression Networks) [cite:visio.ai]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple] which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
 
-Tracktor: The bells and whistles thing?
-DeepSORT: Looks inside bboxes to match them  <!-- https://medium.com/analytics-vidhya/object-tracking-using-deepsort-in-tensorflow-2-ec013a2eeb4f -->
+The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and recent implementations of YOLO by Ultralytics [cite:ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
+
+Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
+and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
+
 
 <!--
   # Acknowledgements
