@@ -131,22 +131,22 @@ parameters specified:
 The following examples are taken from the included test suite and the
 data files can be found in the `tests` directory.
 
-## Perform tracking on a directory of predictions from YOLO:
+**Perform tracking on a directory of predictions from YOLO**
 
     yasmot tests/lab2
 
-## Perfom tracking with interpolation
+**Perfom tracking with interpolation**
 
     yasmot tests/lab2 --interpolate
 
-## Perform tracking limiting gap size
+**Perform tracking limiting gap size**
 
 Here, we only connect tracks with a maximum of two
 frames without detections:
 
     yasmot --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 
-## Perform tracking on stereo images 
+**Perform tracking on stereo images**
 
 The `-s` option allows the user to specify two input stream, here with
 predictions in pixel-based CSV format.  Note that we must specify the
@@ -154,16 +154,16 @@ images size with `--shape`:
 
     yasmot -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 
-## Only link stereo predictions without tracking
+**Only link stereo predictions without tracking**
 
 Again we use pixel-based RetinaNet predictions between the two cameras:
 
     yasmot -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 
-## Merge predictions from multiple object detectors 
+**Merge predictions from multiple object detectors**
 
 Here we use predictions from a familiy of YOLO v8 models to provide
-ensemble predictions: 
+ensemble predictions:
 
     yasmot -c tests/consensus/y8x*
 
