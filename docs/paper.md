@@ -24,18 +24,17 @@ bibliography: paper.bib
 
 # Summary
 
-There exists a number of popular deep learning object detectors,
-programs that will analyze an image and return the location of all
-occurrences of objects from a known set of classes.  For time series
-of images (e.g., video or sequences of stills), tracking objects over
-time is important in order to classify or predict behaviors, to
-estimate the abundances of object types, and a variety of other
-tasks.  `yasmot` is a lightweight and flexible object tracker that can
-process the output from popular object detectors and 
+There exists a number of popular deep learning object detectors, that
+is, programs that will analyze an image and return the locations of
+all occurrences of objects from a known set of classes.  For time
+series of images (e.g., video or sequences of stills), tracking
+objects over time is important in order to classify or predict
+behaviors, to estimate the abundance of different object types, and a
+variety of other tasks.  `yasmot` is a lightweight and flexible object
+tracker that can process the output from popular object detectors and
 track objects over time from monoscopic or steroscopic camera
-configurations, and also generate consensus detections from an ensemble
-of object detectors.
-
+configurations.  In addition, it includes functionality to generate
+consensus detections from ensembles of object detectors.
 
 # Statement of need
 
@@ -148,9 +147,8 @@ frames without detections:
 
 **Perform tracking on stereo images**
 
-The `-s` option allows the user to specify two input stream, here with
-predictions in pixel-based CSV format.  Note that we must specify the
-images size with `--shape`:
+The `-s` option requires the user to specify two input stream, with the assumption that the left images are specified before the right images.  Here we process
+predictions in pixel-based CSV format, and thus we must specify the images size with `--shape`:
 
     yasmot -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 
@@ -170,7 +168,6 @@ ensemble predictions:
 
 # Related work
 
-<!-- from https://viso.ai/deep-learning/object-tracking/ -->
 Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL (Multiple Instance Learning), KCF (Kernelized Correlation Filters), CSRT (Channel and Spatial Reliability Tracking), MedianFlow, TLD (Tracking-Learning-Detection), MOSSE (Minimum Output Sum of Squared Error), and GOTURN (Generic Object Tracking Using Regression Networks) [cite:visio.ai]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple] which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
 
 The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and recent implementations of YOLO by Ultralytics [cite:ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
@@ -178,13 +175,16 @@ The advent of deep learning object detectors like YOLO have brought new object t
 Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
 and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
 
+<!-- OpenCV: from https://viso.ai/deep-learning/object-tracking/ -->
 
-<!--
-  # Acknowledgements
+<!-- https://medium.com/analytics-vidhya/object-tracking-using-deepsort-in-tensorflow-2-ec013a2eeb4f -->
 
-  We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-  Oh, and support from Kathryn Johnston during the genesis of this project.
--->
+# Acknowledgements
+
+This work was developed using data from the CoastVision (RCN grant
+number 325862) and CRIMAC projects (RCN grant number 309512), and
+after discussions with Vaneeda Allken, Taraneh Westergerling, and
+Peter Liessem.
 
 # References
 
