@@ -168,16 +168,12 @@ ensemble predictions:
 
 # Related work
 
-Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL (Multiple Instance Learning), KCF (Kernelized Correlation Filters), CSRT (Channel and Spatial Reliability Tracking), MedianFlow, TLD (Tracking-Learning-Detection), MOSSE (Minimum Output Sum of Squared Error), and GOTURN (Generic Object Tracking Using Regression Networks) [cite:visio.ai]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple] which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
+Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL, KCF, CSRT, MedianFlow, TLD, MOSSE, and GOTURN [@opencv_library]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple], which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
 
-The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and recent implementations of YOLO by Ultralytics [cite:ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
+The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and the popular implementations of YOLO by Ultralytics [@yolov8_ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
 
 Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
 and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
-
-<!-- OpenCV: from https://viso.ai/deep-learning/object-tracking/ -->
-
-<!-- https://medium.com/analytics-vidhya/object-tracking-using-deepsort-in-tensorflow-2-ec013a2eeb4f -->
 
 # Acknowledgements
 
