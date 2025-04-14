@@ -10,7 +10,7 @@ authors:
     orcid: 0000-0000-0000-0000
     affiliation: "1, 2" # (Multiple affiliations must be quoted)
 affiliations:
- - name: Insitute of Marine Research, Bergen, Norway
+ - name: Institute of Marine Research, Bergen, Norway
    index: 1
  - name: Department of Informatics, University of Bergen, Norway
    index: 2
@@ -32,7 +32,7 @@ objects over time is important in order to classify or predict
 behaviors, to estimate the abundance of different object types, and a
 variety of other tasks.  `yasmot` is a lightweight and flexible object
 tracker that can process the output from popular object detectors and
-track objects over time from monoscopic or steroscopic camera
+track objects over time from monoscopic or stereoscopic camera
 configurations.  In addition, it includes functionality to generate
 consensus detections from ensembles of object detectors.
 
@@ -132,9 +132,13 @@ data files can be found in the `tests` directory.
 
 **Perform tracking on a directory of predictions from YOLO**
 
+This reads a directory with a text file of annotations for each frame:
+
     yasmot tests/lab2
 
-**Perfom tracking with interpolation**
+**Perform tracking with interpolation**
+
+Interpolation creates virtual annotations to fill in gaps (i.e., missing detections) in the tracks:
 
     yasmot tests/lab2 --interpolate
 
@@ -160,11 +164,10 @@ Again we use pixel-based RetinaNet predictions between the two cameras:
 
 **Merge predictions from multiple object detectors**
 
-Here we use predictions from a familiy of YOLO v8 models to provide
+Here we use predictions from a family of YOLO v8 models to provide
 ensemble predictions:
 
     yasmot -c tests/consensus/y8x*
-
 
 # Related work
 
@@ -175,12 +178,10 @@ The advent of deep learning object detectors like YOLO have brought new object t
 Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
 and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
 
-# Acknowledgements
+# Acknowledgments
 
-This work was developed using data from the CoastVision (RCN grant
-number 325862) and CRIMAC projects (RCN grant number 309512), and
-after discussions with Vaneeda Allken, Taraneh Westergerling, and
-Peter Liessem.
+This work was developed using data from the CoastVision (RCN 325862) and CRIMAC projects (RCN 309512), and
+after productive discussions with Vaneeda Allken, Taraneh Westergerling, and Peter Liessem.
 
 # References
 
