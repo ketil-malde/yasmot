@@ -55,34 +55,10 @@ def make_args_parser():
     return parser
 
 import sys
-from yasmot.tracking import bbdist_stereo
-from yasmot.tracking import tmatch
-
-def track(frames, metric):
-    """Track single cam frames."""
-    tracks = []
-    old_tracks = []
-    for f in frames:
-        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
-        # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
-        # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
-    return tracks + old_tracks  # sorted by time?
-
-def strack(frames):
-    """Track paired bboxes from a stereo camera"""
-    pass
-
-from yasmot.parser import show_frames
-from yasmot.tracking import summarize_probs, process_tracks
-from frames import get_frames
-from yasmot.definitions import bbshow, getcls
 
 def main():
-    g_trackno = 0
-
-    parser = make_args_parser()
     global args
+    parser = make_args_parser()
     args = parser.parse_args()
 
     rnheader = "frame_id\tx\ty\tw\th\tlabel\tprob"
@@ -107,11 +83,13 @@ def main():
 
     ##################################################
     # Perform tracking
-    from yasmot.tracking import bbdist_track, bbdist_pair
-    from yasmot.definitions import frameid
+    from frames import get_frames
+    from tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks
+    from definitions import frameid, bbshow, getcls
+    from parser import show_frames
 
     input_frames = get_frames(args)
-    
+
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
         if args.stereo:
@@ -122,7 +100,7 @@ def main():
 
         def firstframe(t): return frameid(t.bblist[0])
 
-        ts = track(input_frames, metric)
+        ts = track(input_frames, metric, args)
         ts.sort(key=firstframe)
 
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')

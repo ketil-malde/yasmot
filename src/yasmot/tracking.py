@@ -1,9 +1,6 @@
 # from collections import namedtuple
 from math import exp
-
-from yasmot.definitions import Track
-from yasmot.parser import tobbx_yolo
-
+from definitions import Track
 
 # manually inlined below for speed
 def deltas(bb1, bb2):
@@ -108,7 +105,7 @@ def bbmatch(f1, f2, metric, scale, threshold=0.1):  # [BBox] x [BBox] -> [(BBox,
     # todo: add assertion that all inputs are outputs once?
     return res
 
-from yasmot.definitions import BBox, Frame, g_trackno
+from definitions import BBox, Frame, g_trackno
 
 def xconsensus(bbs):
     """Create a consensus bbox from a list of bboxes - not used?"""
@@ -217,6 +214,17 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
         tracks.insert(0, Track(trackid=g_trackno, bblist=[bb]))
         g_trackno += 1
 
+def track(frames, metric, args):
+    tracks = []
+    old_tracks = []
+    for f in frames:
+        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
+        # def boxes(ts): return [b for t in ts for b in t.bbpairs]
+        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
+        # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
+    return tracks + old_tracks  # sorted by time?
+
+
 from math import log
 
 def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
@@ -265,7 +273,7 @@ def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
         print(res, other)
     return cur, 1 / totp, res
 
-from yasmot.definitions import frameid, setid
+from definitions import frameid, setid
 
 def first(c): return frameid(c[0])
 
@@ -378,6 +386,8 @@ def process_tracks(tracks, interpol=False):
         cur = [c for c in [c[1:] for c in this] + rest if c != []]
 
     return frames, tstats
+
+from parser import tobbx_yolo
 
 def test():
     # read two annotation files

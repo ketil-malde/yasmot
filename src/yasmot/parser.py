@@ -1,8 +1,7 @@
-from yasmot.definitions import BBox, Frame
-
 from os import listdir
 from os.path import isdir, exists
 import sys
+from definitions import BBox, Frame
 
 # For YOLO-style directories, one file per frame, class first
 # Relative coordinates (0-1). Sequence: center_x center_y width height, y (y is from top of frame)
@@ -102,8 +101,7 @@ def write_frames(outfile, fs):
         print('Specify an outfile ending in .csv or /', file=sys.stderr)
     
 # Testing
-import sys
-from yasmot.definitions import bbshow
+from definitions import bbshow
 
 if __name__ == "__main__":
     fs = read_frames(sys.argv[1])
