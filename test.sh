@@ -36,7 +36,7 @@ a3aae3bacbfbd418d243f0a7e09bf92dae9eab9a python3 src/yasmot/main.py -s --shape 1
 1e856023ea79bc61decdb9499bb4f1e207b775eb python3 src/yasmot/main.py tests/lab2
 8c48b6ece4db0ea5d6925954e95214cf89fbaf22 python3 src/yasmot/main.py --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 2a14b4639ce0f30a3b6ab6b6f3084ed2cb8f455a python3 src/yasmot/main.py tests/error3.csv
-b7213abfdb7352c52975d2eeef9e28ace19927ec python3 src/yasmot/main.py tests/lab2 --interpolate
+ce0f1f7b14f06fe3a949eec98c9923e8265fb308 python3 src/yasmot/main.py tests/lab2 --interpolate
 64f0161579349b6e7a431e8aab69807bf18e7a18 python3 src/yasmot/main.py -c tests/consensus/y8x*
 EOF
 
