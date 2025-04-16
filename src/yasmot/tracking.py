@@ -1,6 +1,6 @@
 # from collections import namedtuple
 from math import exp
-from definitions import Track
+from yasmot.definitions import Track
 
 # manually inlined below for speed
 def deltas(bb1, bb2):
@@ -105,33 +105,8 @@ def bbmatch(f1, f2, metric, scale, threshold=0.1):  # [BBox] x [BBox] -> [(BBox,
     # todo: add assertion that all inputs are outputs once?
     return res
 
-from definitions import BBox, Frame, g_trackno
-
-def xconsensus(bbs):
-    """Create a consensus bbox from a list of bboxes - not used?"""
-    assert len(bbs) > 0, 'Error: consensus of zero bboxes?'
-
-    def avg(ls): return sum(ls) / len(ls)
-    fid = bbs[0].frameid
-    x = avg([b.x for b in bbs])
-    y = avg([b.y for b in bbs])
-    w = avg([b.w for b in bbs])
-    h = avg([b.h for b in bbs])
-
-    # todo: how to calculate class and prob?
-    probs = {}
-    for b in bbs: probs[b.cls] = []
-    for b in bbs: probs[b.cls].append(b.pr)
-
-    if len(probs) == 1:
-        cl = list(probs.keys())[0]
-        p  = max(probs[cl])
-    else:
-        cl, p, res = summarize_probs(probs)
-
-    return BBox(fid, x, y, w, h, cl, p)
-
 from parse import parse
+from yasmot.definitions import BBox, Frame, g_trackno
 
 def assign(bbs, tracks, scale, metric, append_threshold=0.1):
     """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
@@ -171,6 +146,9 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
     '''Use Hungarian alg to match tracks and bboxes'''
     old_track_limit = 5
 
+    # zz Notes: tracks are tracks seen previous frame? They should be aged out, IMO...?
+    # zz This is clunky and hard to understand.
+    
     ##################################################
     # Step one: match bbs'es to existing tracks
     bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale, metric)
@@ -273,7 +251,7 @@ def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
         print(res, other)
     return cur, 1 / totp, res
 
-from definitions import frameid, setid
+from yasmot.definitions import frameid, setid
 
 def first(c): return frameid(c[0])
 
@@ -387,7 +365,7 @@ def process_tracks(tracks, interpol=False):
 
     return frames, tstats
 
-from parser import tobbx_yolo
+from yasmot.parser import tobbx_yolo
 
 def test():
     # read two annotation files
