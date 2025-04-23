@@ -3,7 +3,7 @@ from collections import namedtuple
 global g_trackno
 g_trackno = 0
 
-BBox = namedtuple('BBox', 'frameid x y w h cls pr')  # :: Doubles
+BBox = namedtuple('BBox', ['frameid', 'x', 'y', 'w', 'h', 'cls', 'pr'])  # :: Doubles
 
 def bbshow1(b): return f'{b.x:.5f}\t{b.y:.5f}\t{b.w:.5f}\t{b.h:.5f}\t{b.cls}\t{b.pr:.5f}'
 
@@ -35,11 +35,11 @@ def setid(bbox, label):
     else:
         return BBox(frameid=bbox.frameid, x=bbox.x, y=bbox.y, w=bbox.w, h=bbox.h, cls=label, pr=bbox.pr)
 
-Frame = namedtuple('Frame', 'frameid bboxes')  # :: [BBox]
+Frame = namedtuple('Frame', ['frameid', 'bboxes'])  # :: [BBox]
 
-BBpair = namedtuple('BBPair', 'bbleft bbright')
+BBpair = namedtuple('BBPair', ['bbleft', 'bbright'])
 
-Track = namedtuple('Track', 'trackid bblist')
+Track = namedtuple('Track', ['trackid', 'bblist'])
 
 import sys
 def error(msg):
