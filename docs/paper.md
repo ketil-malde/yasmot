@@ -24,15 +24,16 @@ bibliography: paper.bib
 
 # Summary
 
-There exists a number of popular deep learning object detectors, that
-is, programs that will analyze an image and return the locations of
-all occurrences of objects from a known set of classes.  For time
-series of images (e.g., video or sequences of stills), tracking
-objects over time is important in order to classify or predict
-behaviors, to estimate the abundance of different object types, and a
-variety of other tasks.  `yasmot` is a lightweight and flexible object
-tracker that can process the output from popular object detectors and
-track objects over time from monoscopic or stereoscopic camera
+There now exists many popular object detectors based on deep learning
+that can analyze images and extract locations and class labels for
+occurrences of objects.  For image time series (/i.e./, video or
+sequences of stills), tracking objects over time and preserving object
+identity can help to improve object detection performance, and is
+necessary for many downstream tasks, including classifying and
+predicting behaviors, and estimating total abundances.  Here we
+present `yasmot`, a lightweight and flexible object tracker that can
+process the output from popular object detectors and track objects
+over time from either monoscopic or stereoscopic camera
 configurations.  In addition, it includes functionality to generate
 consensus detections from ensembles of object detectors.
 
@@ -144,8 +145,10 @@ Interpolation creates virtual annotations to fill in gaps (i.e., missing detecti
 
 **Perform tracking limiting gap size**
 
-Here, we only connect tracks with a maximum of two
-frames without detections:
+Here, we only connect tracks with a maximum of two frames without
+detections.  The frames in `tests/lab` are named `frame_000152.txt`,
+`frame_000153.txt`, and so on, and the `--time_pattern` expression must
+match this format.
 
     yasmot --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 
