@@ -61,7 +61,7 @@ def bbdist_stereo(bb1, bb2, scale):
     x2, w2 = edgecorrect(x2, w2, w1)
     y2, h2 = edgecorrect(y2, h2, h1)
 
-    dx, dy, dw, dh, dcls = x1 - x2, y1 - y2, w1 - w2, h1 - h2, bb1.cls == bb2.cls  # deltas()
+    _dx, dy, dw, dh, _dcls = x1 - x2, y1 - y2, w1 - w2, h1 - h2, bb1.cls == bb2.cls  # deltas()
     wsq, hsq = w1 * w2 * scale, h1 * h2 * scale
 
     # these are 1 when dx, dy, dw, dh are zero, and zero as they go towards infty
