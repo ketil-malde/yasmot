@@ -142,50 +142,39 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
 
     return bbs_rest, tracks, unmatched_tracks
 
-def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
-    '''Use Hungarian alg to match tracks and bboxes'''
-    old_track_limit = 5
+def tmatch(bbs, tracks, max_age, time_pattern, scale, metric):
 
-    # zz Notes: tracks are tracks seen previous frame? They should be aged out, IMO...?
-    # zz This is clunky and hard to understand.
-    
-    ##################################################
-    # Step one: match bbs'es to existing tracks
-    bbs_rest, _matched, first_unmatched = assign(bbs, tracks, scale, metric)
-    # print(f'  *** Tmatch total number of boxes, rest: {len(bbs_rest)}, matched {len([b for t in _matched for b in t.bblist])}, unmatched {len([b for t in first_unmatched for b in t.bblist])}')
-
-    ##################################################
-    # Step two: match bbs_rest to old_tracks
-    # Helper function: Extract time value from frame ID
-    def extime(frid):
-        t = parse(time_pattern, frid)
+    # Helper functions: Extract time value from frame ID
+    def extime(pattern, frid):
+        t = parse(pattern, frid)
         if t is None:
-            print(f'Error: invalid time pattern "{time_pattern}", doesn\'t match frame label "{frid}".')
+            print(f'Error: invalid time pattern "{pattern}", doesn\'t match frame label "{frid}".')
             exit(255)
         else:
             return int((t)[0])
 
-    # Determine how far back to look
-    if bbs_rest != []:
+    def time_predicate(trk):
+        last = trk.bblist[-1]
         if max_age is None:
-            ot_lim = min(old_track_limit, len(old_tracks))
+            return frameid(last) == frameid(tracks[0].bblist[-1])
         else:
-            ot_lim = 0
-            while ot_lim < len(old_tracks) and extime(bbs_rest[0].frameid) - extime(old_tracks[ot_lim].bblist[-1].frameid) < max_age:
-                ot_lim += 1
-        ot = []
-        for i in range(ot_lim): ot.append(old_tracks.pop(0))
+            return extime(time_pattern, frameid(last)) >= extime(time_pattern, bbs[0].frameid) - max_age
 
-        bbs_rest, matched, second_unmatched = assign(bbs_rest, ot, scale, metric)
-        for m in matched:
-            tracks.append(m)
+    cur_tracks = []
+    while len(tracks) > 0 and time_predicate(tracks[0]):
+        cur_tracks.append(tracks.pop(0))
 
-        for o in second_unmatched: old_tracks.insert(0, o)
+    # Match new bboxes to tracks
+    #   todo: tracks with associated ages
+    bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric)
 
-    for o in first_unmatched: old_tracks.insert(0, o)
+    # New tracks are: matched ++ unmatched ++ old tracks
+    for t in unmatched:
+        tracks.insert(0, t)
+    for t in matched:
+        tracks.insert(0, t)
 
-    ##################################################
-    # Step three: remove spurious detections and generate new tracks
+    # Create new tracks for unmatched bboxes (i.e. bbs_rest).
     global g_trackno
     for bb in bbs_rest:
         # if bb matches an existing track, or another bb, then merge, else:
@@ -194,13 +183,12 @@ def tmatch(bbs, tracks, old_tracks, max_age, time_pattern, scale, metric):
 
 def track(frames, metric, args):
     tracks = []
-    old_tracks = []
     for f in frames:
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
+        tmatch(f.bboxes, tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
-    return tracks + old_tracks  # sorted by time?
+    return tracks
 
 
 from math import log
