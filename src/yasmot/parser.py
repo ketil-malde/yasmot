@@ -1,7 +1,7 @@
 from os import listdir, mkdir
 from os.path import isdir, exists
 import sys
-from yasmot.definitions import BBox, Frame
+from yasmot.definitions import BBox, Frame, bbshow
 
 # For YOLO-style directories, one file per frame, class first
 # Relative coordinates (0-1). Sequence: center_x center_y width height, y (y is from top of frame)
@@ -77,7 +77,7 @@ def write_yolo(of, fs):
             for b in frame.bboxes:
                 f.write(f'{b.cls} {b.x:.3f} {b.y:.3f} {b.w:.3f} {b.h:.3f} {b.pr:.3f}\n')
 
-def write_rn(of, fs, shape=(1228,1027)):
+def write_rn(of, fs, shape=(1228, 1027)):
     with open(of, 'w') as f:
         f.write('# header line\n')
         for frame in fs:
@@ -92,16 +92,14 @@ def write_frames(outfile, fs):
     if exists(outfile):  # does this handle trailing slash?
         print(f'{outfile} already exists - aborting.', file=sys.stderr)
     elif outfile[-1] == '/':
-        os.mkdir(outfile)
+        mkdir(outfile)
         write_yolo(outfile, fs)
     elif outfile[-4:] == '.csv':
         write_rn(outfile, fs)
     else:
         print('Specify an outfile ending in .csv or /', file=sys.stderr)
-    
-# Testing
-from yasmot.definitions import bbshow
 
+# Testing
 if __name__ == "__main__":
     fs = read_frames(sys.argv[1])
     show_frames(fs)
