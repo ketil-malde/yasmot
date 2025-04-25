@@ -11,8 +11,8 @@
 #    Extract tracks from video frames/sequential stills
 
 import argparse
-
 from parse import parse
+
 
 def intpair(s):
     """Parse a pair of integers from the command line"""
@@ -23,8 +23,11 @@ def intpair(s):
     else:
         return (int(w), int(h))
 
+
 desc = """Track detected objects, optionally linking stereo images and/or
           merging independent detections into a consensus"""
+
+
 def make_args_parser():
     parser = argparse.ArgumentParser(prog='yasmot', description=desc, add_help=True)  # false?
 
@@ -51,118 +54,11 @@ def make_args_parser():
                         help='Files or directories to process')
     return parser
 
-from yasmot.tracking import bbmatch, bbdist_stereo, bbdist_track
-from yasmot.definitions import BBox, Frame
 import sys
 
-# what if one frame is missing?
-def zip_frames(lists):
-    """Merge lists of frames, assumed to be named in lexically increasing order"""
-    cur = ''
-    results = []
-    while not all([t == [] for t in lists]):
-        heads = [l[0] if l != [] else None for l in lists]
-        tails = [l[1:] if l != [] else [] for l in lists]
-        myframe = min([h.frameid for h in heads if h is not None])
-        assert cur < myframe, 'Error: frames not in lecially increasing order'
-        cur = myframe
-        res = []
-
-        for i in range(len(heads)):
-            if heads[i] is None:
-                res.append(Frame(frameid=myframe, bboxes=[]))
-            elif heads[i].frameid == myframe:
-                res.append(heads[i])
-            else:
-                res.append(Frame(frameid=myframe, bboxes=[]))
-                tails[i].insert(0, heads[i])
-        results.append(res)
-        lists = tails
-    return results
-
-def consensus_frame(tup, unknown=None):
-    """Build consensus for a tuple of frames"""
-
-    def consensus(bbpair, i):
-        """Merge two bboxes"""
-        bb1, bb2 = bbpair
-
-        a = i / (i + 1)  # weight_current (bb1)
-        b = 1 / (i + 1)  # weight_next (bb2)
-
-        if bb1 is None:
-            fid = bb2.frameid
-            x, y, w, h, cl = bb2.x, bb2.y, bb2.w, bb2.h, bb2.cls if type(bb2.cls) is list else [(bb2.cls, bb2.pr)]
-            p = bb2.pr * b
-        elif bb2 is None:
-            fid = bb1.frameid
-            x, y, w, h, cl = bb1.x, bb1.y, bb1.w, bb1.h, bb1.cls if type(bb1.cls) is list else [(bb1.cls, bb1.pr)]
-            p = bb1.pr * a
-        else:
-            fid = bb1.frameid
-            x = a * bb1.x + b * bb2.x
-            y = a * bb1.y + b * bb2.y
-            w = a * bb1.w + b * bb2.w
-            h = a * bb1.h + b * bb2.h
-            p = bb1.pr * a + bb2.pr * b
-            cl = bb1.cls
-            cl.append((bb2.cls, bb2.pr))
-        return BBox(fid, x, y, w, h, cl, p)
-
-    def select_class(cplist):
-        res = {}
-        for (c, p) in cplist:
-            if c not in res:
-                res[c] = [p]
-            else:
-                res[c].append(p)
-        cls, _1, _2 = summarize_probs(res, unknown=unknown)
-        return unknown if cls is None else cls
-
-    myframe = tup[0].frameid
-    mybboxes = [bb._replace(cls=[(bb.cls, bb.pr)]) for bb in tup[0].bboxes]
-
-    i = 0
-    for t in tup[1:]:
-        if t.frameid != myframe:
-            error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
-        else:
-            i = i + 1  # todo: whops, only if not None
-            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
-    return Frame(frameid=myframe, bboxes=[bb._replace(cls=select_class(bb.cls)) for bb in mybboxes])
-
-def merge_frames(fs):
-    (f1, f2) = fs
-    assert f1.frameid == f2.frameid, f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}"
-    bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo, scale=1)
-    return Frame(frameid=f1.frameid, bboxes=bbpairs)
-
-from yasmot.tracking import tmatch
-
-def track(frames, metric):
-    """Track single cam frames."""
-    tracks = []
-    old_tracks = []
-    for f in frames:
-        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
-        # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, old_tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
-        # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
-    return tracks + old_tracks  # sorted by time?
-
-def strack(frames):
-    """Track paired bboxes from a stereo camera"""
-    pass
-
-from yasmot.parser import read_frames, show_frames
-from yasmot.tracking import summarize_probs, process_tracks
-from yasmot.definitions import bbshow, error, getcls
-
 def main():
-    g_trackno = 0
-
-    parser = make_args_parser()
     global args
+    parser = make_args_parser()
     args = parser.parse_args()
 
     rnheader = "frame_id\tx\ty\tw\th\tlabel\tprob"
@@ -181,40 +77,14 @@ def main():
             of.close()
             tf.close()
 
-    if args.consensus and args.stereo:
-        error('Unsupported combination of arguments:\n' + str(args))
-
-    ##################################################
-    # Read in the detections as a stream of stereo frames
-    elif args.stereo:
-        if len(args.FILES) == 2:
-            [fr_left, fr_right] = [read_frames(f, shape=args.shape) for f in args.FILES]
-            res1 = []
-            for t in zip_frames([fr_left, fr_right]):
-                res1.append(merge_frames(t))
-        else:
-            error(f'Wrong number of files {len(args.FILES)} instead of 2.')
-    ##################################################
-    # Read a list of annotations to construct consensus frames
-    elif args.consensus:
-        fs = [read_frames(f, shape=args.shape) for f in args.FILES]
-        res1 = []
-        for t in zip_frames(fs):
-            res1.append(consensus_frame(t, args.unknown_class))
-    ##################################################
-    # Just a regular annotation file/directory
-    else:
-        if len(args.FILES) == 1:
-            res1 = read_frames(args.FILES[0], shape=args.shape)
-        elif len(args.FILES) > 1:
-            error('Too many files, maybe you meant -s or -c?')
-        else:
-            error('No files specified?  Use --help for help.')
-
     ##################################################
     # Perform tracking
-    from yasmot.tracking import bbdist_track, bbdist_pair
-    from yasmot.definitions import frameid
+    from yasmot.frames import get_frames
+    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks
+    from yasmot.definitions import frameid, bbshow, getcls
+    from yasmot.parser import show_frames
+
+    input_frames = get_frames(args)
 
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
@@ -225,7 +95,7 @@ def main():
             metric = bbdist_track
         def firstframe(t): return frameid(t.bblist[0])
 
-        ts = track(res1, metric)
+        ts = track(input_frames, metric, args)
         ts.sort(key=firstframe)
 
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')
@@ -252,17 +122,17 @@ def main():
                 output(bbshow(b) + f'\t{track_ann[int(getcls(b))]}')
 
     elif args.stereo:  # not tracking, stereo frames
-        # just output res1 (::[Frame])
+        # just output input_frames (::[Frame])
         dashes = '-\t' * 6 + '-'
         output('# ' + rnheader + '\t' + rnheader + '\tsimilarity')
-        for x in res1:
+        for x in input_frames:
             for a, b in x.bboxes:  # assuming -s here?
                 astr = bbshow(a) if a is not None else dashes
                 bstr = bbshow(b) if b is not None else dashes
                 dist = str(bbdist_stereo(a, b, args.scale)) if a is not None and b is not None else "n/a"
                 output(astr + "\t" + bstr + "\t" + dist)
     else:
-        show_frames(res1)
+        show_frames(input_frames)
 
     closeup()
 
