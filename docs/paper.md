@@ -7,7 +7,7 @@ tags:
   - stereo images
 authors:
   - name: Ketil Malde
-    orcid: 0000-0000-0000-0000
+    orcid: 0000-0001-7381-1849
     affiliation: "1, 2" # (Multiple affiliations must be quoted)
 affiliations:
  - name: Institute of Marine Research, Bergen, Norway
