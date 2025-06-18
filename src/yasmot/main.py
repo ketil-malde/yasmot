@@ -120,7 +120,7 @@ def main():
             pred_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
         if args.stereo:
-            output('#frame_id\txl\tyl\twl\thl\ttrack_l\tprob_l\t\txr\tyr\twr\thr\ttrack_r\tprob_r\tlabel')
+            output('#frame_id\txl\tyl\twl\thl\ttrack_l\tprob_l\txr\tyr\twr\thr\ttrack_r\tprob_r\tlabel')
         else:
             output('#frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
         for f in fs:
