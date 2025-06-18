@@ -119,10 +119,7 @@ def main():
             track_ann[s] = cls
             pred_output(f'track: {s} len: {sum([len(v) for v in ss[s].values()])} prediction: {cls} prob: {prb:.5f} logits: {res}')
 
-        if args.stereo:
-            output('#frame_id\txl\tyl\twl\thl\ttrack_l\tprob_l\txr\tyr\twr\thr\ttrack_r\tprob_r\tlabel')
-        else:
-            output('#frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
+        output('# frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
         for f in fs:
             for b in f.bboxes:
                 # todo: output class too
@@ -131,7 +128,7 @@ def main():
     elif args.stereo:  # not tracking, stereo frames
         # just output input_frames (::[Frame])
         dashes = '-\t' * 6 + '-'
-        output('#' + rnheader + '\t' + rnheader + '\tsimilarity')
+        output('# ' + rnheader + '\t' + rnheader + '\tsimilarity')
         for x in input_frames:
             for a, b in x.bboxes:  # assuming -s here?
                 astr = bbshow(a) if a is not None else dashes
