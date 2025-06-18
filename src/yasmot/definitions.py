@@ -15,7 +15,7 @@ def bbshow1(b):
 def bbshow2(pair):
     '''Convert a pair of (stereo) BBoxes to a string'''
     a, b = pair
-    dashes = '-\t' * 6 + '-'
+    dashes = '-\t' * 5 + '-'
     astr = bbshow1(a) if a is not None else dashes
     bstr = bbshow1(b) if b is not None else dashes
     return f'{frameid(pair)}\t{astr}\t{bstr}'
