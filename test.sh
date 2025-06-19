@@ -26,9 +26,9 @@ while read sum cmd; do
     echo -n "$cmd ... "
     check=$($cmd | tee .tests/$sum.out | sha1sum | cut -f1 -d' ')
     if [ $check == $sum ]; then
-	echo "passed."
+	echo -e "\033[32mpassed.\033[0m"
     else
-	echo "FAILED!"
+	echo -e "\033[31mFAILED!\033[0m"
 	$cmd > $sum.out
 	status=255
     fi
