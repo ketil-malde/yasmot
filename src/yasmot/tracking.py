@@ -197,8 +197,7 @@ def track(frames, metric, args):
                 prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
                 time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, prev_frame=prev_frame, pattern=args.framenumber_pattern)
             else:
-                def time_pred(trk):
-                    return frameid(trk.bblist[-1]) in [frameid(f[0]) for f in [frames[max(0, i - args.max_age):i]]]
+                def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - args.max_age):i]]
             tmatch(f.bboxes, tracks, time_pred, args.scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
