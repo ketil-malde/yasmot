@@ -29,7 +29,6 @@ while read sum cmd; do
 	    echo -e "\033[32mpassed.\033[0m"
 	else
 	    echo -e "\033[31mFAILED!\033[0m"
-	    $cmd > $sum.out
 	    status=255
 	fi
     else
