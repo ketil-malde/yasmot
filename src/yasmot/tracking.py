@@ -142,10 +142,11 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
 
     return bbs_rest, tracks, unmatched_tracks
 
-def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
 
-    # Helper functions: Extract time value from frame ID
-    def exframeno(pattern, frid):
+def get_time_predicate(cur_frame, max_age, pattern):
+    """Check whether a track is still current by checking its last detection against the current frame"""
+
+    def exframeno(frid):
         t = parse(pattern, frid)
         if t is None:
             print(f'Error: invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
@@ -153,16 +154,27 @@ def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
         else:
             return int((t)[0])
 
-    def time_predicate(trk):
+    def time_predicate(trk, prev_frame):
         last = trk.bblist[-1]
         if max_age is None:
-            return frameid(last) == frameid(tracks[0].bblist[-1])
+            return frameid(last) == frameid(prev_frame)
         else:
-            return exframeno(frameno_pattern, frameid(last)) >= exframeno(frameno_pattern, bbs[0].frameid) - max_age
+            return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
 
+    return time_predicate
+
+
+def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
+
+    cur_frame = bbs[0].frameid if max_age is not None else None  # WTF?  Why need the check?
+    time_pred = get_time_predicate(cur_frame, max_age, frameno_pattern)
+
+    # Move tracks that are new enough to cur_tracks
     cur_tracks = []
-    while len(tracks) > 0 and time_predicate(tracks[0]):
+    prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
+    while len(tracks) > 0 and time_pred(tracks[0], prev_frame):
         cur_tracks.append(tracks.pop(0))
+        prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
 
     # Match new bboxes to tracks
     #   todo: tracks with associated ages
