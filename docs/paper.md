@@ -14,19 +14,21 @@ affiliations:
    index: 1
  - name: Department of Informatics, University of Bergen, Norway
    index: 2
-date: 2024-01-
+date: 2025-06-19
 bibliography: paper.bib
 ---
 
-<!-- to build:
+<!-- to build for JOSS:
      % docker run --rm --volume $PWD/docs:/data --user $(id -u):$(id -g) --env JOURNAL=joss openjournals/inara
+	   or for Arxiv:
+	 pandoc -s --citeproc --bibliography paper.bib paper.md -o paper.tex
 -->
 
 # Summary
 
 There now exists many popular object detectors based on deep learning
 that can analyze images and extract locations and class labels for
-occurrences of objects.  For image time series (/i.e./, video or
+occurrences of objects.  For image time series (_i.e._, video or
 sequences of stills), tracking objects over time and preserving object
 identity can help to improve object detection performance, and is
 necessary for many downstream tasks, including classifying and
