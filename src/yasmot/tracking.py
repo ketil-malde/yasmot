@@ -143,7 +143,7 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
     return bbs_rest, tracks, unmatched_tracks
 
 
-def get_time_predicate(cur_frame, max_age, pattern):
+def get_time_predicate(cur_frame, prev_frame, max_age, pattern):
     """Check whether a track is still current by checking its last detection against the current frame"""
 
     def exframeno(frid):
@@ -154,7 +154,7 @@ def get_time_predicate(cur_frame, max_age, pattern):
         else:
             return int((t)[0])
 
-    def time_predicate(trk, prev_frame):
+    def time_predicate(trk):
         last = trk.bblist[-1]
         if max_age is None:
             return frameid(last) == frameid(prev_frame)
@@ -164,20 +164,14 @@ def get_time_predicate(cur_frame, max_age, pattern):
     return time_predicate
 
 
-def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
-
-    cur_frame = frameid(bbs[0])
-    time_pred = get_time_predicate(cur_frame, max_age, frameno_pattern)
+def tmatch(bbs, tracks, time_pred, scale, metric):
 
     # Move tracks that are new enough to cur_tracks
     cur_tracks = []
-    prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
-    while len(tracks) > 0 and time_pred(tracks[0], prev_frame):
+    while len(tracks) > 0 and time_pred(tracks[0]):
         cur_tracks.append(tracks.pop(0))
-        prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
 
     # Match new bboxes to tracks
-    #   todo: tracks with associated ages
     bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric)
 
     # New tracks are: matched ++ unmatched ++ old tracks
@@ -195,11 +189,13 @@ def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
 
 def track(frames, metric, args):
     tracks = []
-    for f in frames:
-        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
+    for i, f in enumerate(frames):
+        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}') 
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         if f.bboxes:
-            tmatch(f.bboxes, tracks, args.max_age, args.framenumber_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
+            prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
+            time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, prev_frame=prev_frame, pattern=args.framenumber_pattern)
+            tmatch(f.bboxes, tracks, time_pred, args.scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
 
