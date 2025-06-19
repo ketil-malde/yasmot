@@ -41,9 +41,12 @@ def make_args_parser():
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
     parser.add_argument('--max_age', '-m', default=None, type=int,
-                        help="""Maximum age to search for old tracks to resurrect.""")
-    parser.add_argument('--time_pattern', '-t', default='{}', type=str,
-                        help="""Pattern to extract time from frame ID.""")
+                        help="""Maximum age to search for old tracks to resurrect.
+                                (in seconds for time stamps, or frames for frame numbers.)""")
+    # parser.add_argument('--timestamp_pattern', '-t', default=None, type=str,
+    #                    help="""Pattern to extract a timestamp from frame ID.""")
+    parser.add_argument('--framenumber_pattern', '-t', default=None, type=str,
+                        help="""Pattern to extract the frame number from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
     parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
     parser.add_argument('--unknown_class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
@@ -134,8 +137,9 @@ def main():
         output('#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity')
         for x in input_frames:
             for a, b in x.bboxes:
-                dist = str(bbdist_stereo(a, b, args.scale)) if a is not None and b is not None else "n/a"
-                output(bbshow((a, b)) + "\t" + dist)
+                sim = str(bbdist_stereo(a, b, args.scale)) if a is not None and b is not None else "n/a"
+                # zval = ...
+                output(bbshow((a, b)) + "\t" + sim)
     else:
         show_frames(input_frames)
 

@@ -38,7 +38,7 @@ b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 -m src.yasmot.parser tests/L.cs
 e3b75c1f5270e7bc6922d1830f55533d34dbc396 python3 -m src.yasmot.main -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 68842a31c5b80add4ba6904e9b1d9ddff9afb68c python3 -m src.yasmot.main -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 fb205f3406584f58f9120680c08a7df34ced5bd0 python3 -m src.yasmot.main tests/lab2
-d7fad65ece11c6b66033b26491c2d2815d746758 python3 -m src.yasmot.main --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
+d7fad65ece11c6b66033b26491c2d2815d746758 python3 -m src.yasmot.main --max_age 2 --framenumber_pattern frame_\{:d\}.txt tests/lab2
 efaa15533e478ddf4db1fda103d1860f329561a4 python3 -m src.yasmot.main tests/error3.csv
 ed08e7453c4031f9e798a98f963239833e270dd5 python3 -m src.yasmot.main tests/lab2 --interpolate
 8be0fc9d8512c56a0a36a16f01c46f77bc5616fb python3 -m src.yasmot.main -c tests/consensus/y8x*

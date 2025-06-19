@@ -142,13 +142,13 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
 
     return bbs_rest, tracks, unmatched_tracks
 
-def tmatch(bbs, tracks, max_age, time_pattern, scale, metric):
+def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
 
     # Helper functions: Extract time value from frame ID
-    def extime(pattern, frid):
+    def exframeno(pattern, frid):
         t = parse(pattern, frid)
         if t is None:
-            print(f'Error: invalid time pattern "{pattern}", doesn\'t match frame label "{frid}".')
+            print(f'Error: invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
             exit(255)
         else:
             return int((t)[0])
@@ -158,7 +158,7 @@ def tmatch(bbs, tracks, max_age, time_pattern, scale, metric):
         if max_age is None:
             return frameid(last) == frameid(tracks[0].bblist[-1])
         else:
-            return extime(time_pattern, frameid(last)) >= extime(time_pattern, bbs[0].frameid) - max_age
+            return exframeno(frameno_pattern, frameid(last)) >= exframeno(frameno_pattern, bbs[0].frameid) - max_age
 
     cur_tracks = []
     while len(tracks) > 0 and time_predicate(tracks[0]):
@@ -186,7 +186,7 @@ def track(frames, metric, args):
     for f in frames:
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, args.max_age, args.time_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
+        tmatch(f.bboxes, tracks, args.max_age, args.framenumber_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
 
