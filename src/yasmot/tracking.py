@@ -166,7 +166,7 @@ def get_time_predicate(cur_frame, max_age, pattern):
 
 def tmatch(bbs, tracks, max_age, frameno_pattern, scale, metric):
 
-    cur_frame = bbs[0].frameid if max_age is not None else None  # WTF?  Why need the check?
+    cur_frame = frameid(bbs[0])
     time_pred = get_time_predicate(cur_frame, max_age, frameno_pattern)
 
     # Move tracks that are new enough to cur_tracks
@@ -198,7 +198,8 @@ def track(frames, metric, args):
     for f in frames:
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
-        tmatch(f.bboxes, tracks, args.max_age, args.framenumber_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
+        if f.bboxes:
+            tmatch(f.bboxes, tracks, args.max_age, args.framenumber_pattern, args.scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
 

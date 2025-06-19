@@ -45,6 +45,7 @@ d7fad65ece11c6b66033b26491c2d2815d746758 python3 -m src.yasmot.main --max-age 2 
 efaa15533e478ddf4db1fda103d1860f329561a4 python3 -m src.yasmot.main tests/error3.csv
 ed08e7453c4031f9e798a98f963239833e270dd5 python3 -m src.yasmot.main tests/lab2 --interpolate
 8be0fc9d8512c56a0a36a16f01c46f77bc5616fb python3 -m src.yasmot.main -c tests/consensus/y8x*
+209de867e4c3d2ec4b194f449e576c0205e750ed python3 -m src.yasmot.main --max-age 2 --framenumber-pattern \{:d\} -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 EOF
 
 exit $status
