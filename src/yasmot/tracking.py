@@ -143,7 +143,7 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
     return bbs_rest, tracks, unmatched_tracks
 
 
-def get_time_predicate(cur_frame, prev_frame, max_age, pattern):
+def get_time_predicate(cur_frame, max_age, pattern):
     """Check whether a track is still current by checking its last detection against the current frame"""
 
     def exframeno(frid):
@@ -156,10 +156,7 @@ def get_time_predicate(cur_frame, prev_frame, max_age, pattern):
 
     def time_predicate(trk):
         last = trk.bblist[-1]
-        if max_age is None:
-            return frameid(last) == frameid(prev_frame)
-        else:
-            return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
+        return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
 
     return time_predicate
 
@@ -187,15 +184,15 @@ def tmatch(bbs, tracks, time_pred, scale, metric):
         tracks.insert(0, Track(trackid=g_trackno, bblist=[bb]))
         g_trackno += 1
 
+
 def track(frames, metric, args):
     tracks = []
     for i, f in enumerate(frames):
-        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}') 
+        # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         if f.bboxes:
             if args.framenumber_pattern:
-                prev_frame = tracks[0].bblist[-1] if len(tracks) > 0 else None
-                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, prev_frame=prev_frame, pattern=args.framenumber_pattern)
+                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, pattern=args.framenumber_pattern)
             else:
                 def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - args.max_age):i]]
             tmatch(f.bboxes, tracks, time_pred, args.scale, metric)  # match bboxes to tracks (tmatch)
