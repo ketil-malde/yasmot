@@ -40,7 +40,7 @@ def make_args_parser():
     # Tracking
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
-    parser.add_argument('--max-age', '-m', default=None, type=int,
+    parser.add_argument('--max-age', '-m', default=2, type=int,
                         help="""Maximum age to search for old tracks to resurrect.
                                 (in seconds for time stamps, or frames for frame numbers.)""")
     # parser.add_argument('--timestamp-pattern', '-t', default=None, type=str,
