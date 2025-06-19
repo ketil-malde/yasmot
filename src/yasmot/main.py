@@ -130,14 +130,11 @@ def main():
 
     elif args.stereo:  # not tracking, stereo frames
         # just output input_frames (::[Frame])
-        dashes = '-\t' * 6 + '-'
-        output('#' + rnheader + '\t' + rnheader + '\tsimilarity')
+        output('#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity')
         for x in input_frames:
-            for a, b in x.bboxes:  # assuming -s here?
-                astr = bbshow(a) if a is not None else dashes
-                bstr = bbshow(b) if b is not None else dashes
+            for a, b in x.bboxes:
                 dist = str(bbdist_stereo(a, b, args.scale)) if a is not None and b is not None else "n/a"
-                output(astr + "\t" + bstr + "\t" + dist)
+                output(bbshow((a, b)) + "\t" + dist)
     else:
         show_frames(input_frames)
 

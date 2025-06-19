@@ -35,7 +35,7 @@ while read sum cmd; do
     done\
 	<<EOF
 b198fb325a02cd2f38bbddaa01fe76ac0f2a745f python3 -m src.yasmot.parser tests/L.csv
-3f0be6b6443913886d5a2d5a59692356149cec0b python3 -m src.yasmot.main -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
+e3b75c1f5270e7bc6922d1830f55533d34dbc396 python3 -m src.yasmot.main -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 68842a31c5b80add4ba6904e9b1d9ddff9afb68c python3 -m src.yasmot.main -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 fb205f3406584f58f9120680c08a7df34ced5bd0 python3 -m src.yasmot.main tests/lab2
 d7fad65ece11c6b66033b26491c2d2815d746758 python3 -m src.yasmot.main --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
