@@ -36,23 +36,26 @@ def make_args_parser():
                         help="""Output consensus annotation per image.""")
     parser.add_argument('--stereo', '-s', action='store_const', default=False, const=True,
                         help="""Process stereo images.""")
+    parser.add_argument('--unknown-class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
+    parser.add_argument('--shape', default=(1228, 1027), type=intpair, help="""Image dimensions, width and height.""")
 
     # Tracking
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
+    parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
+
+    # Allowing gaps in tracks
+    parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
     parser.add_argument('--max-age', '-m', default=2, type=float,
                         help="""Maximum age to search for old tracks to resurrect.
                                 (in seconds for time stamps, or frames for frame numbers.)""")
     parser.add_argument('--timestamp', action=argparse.BooleanOptionalAction,
                         help="""Interpret framenumber as a timestamp.""")
-    parser.add_argument('--framenumber-pattern', default=None, type=str,
-                        help="""Pattern to extract the frame number from frame ID.""")
-    parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
-    parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
-    parser.add_argument('--unknown-class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
-    parser.add_argument('--shape', default=(1228, 1027), type=intpair, help="""Image dimensions, width and height.""")
-    parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
+    parser.add_argument('--framelabel-pattern', '-P', default=None, type=str,
+                        help="""Pattern to extract the frame number or time from the frame ID.""")
 
+    # Inputs and outputs
+    parser.add_argument('--output', '-o', default=None, type=str, help="""Output file or directory""")
     parser.add_argument('FILES', metavar='FILES', type=str, nargs='*',
                         help='Files or directories to process')
     return parser
