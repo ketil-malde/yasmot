@@ -92,7 +92,7 @@ def main():
     ##################################################
     # Perform tracking
     from yasmot.frames import get_frames
-    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks
+    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, edgecorrect
     from yasmot.definitions import frameid, bbshow, getcls
     from yasmot.parser import show_frames
 
@@ -146,7 +146,13 @@ def main():
             for a, b in x.bboxes:
                 sim = f'{bbdist_stereo(a, b, args.scale):.3f}' if a is not None and b is not None else "n/a"
                 if args.focal_lenght and args.camera_offset:
-                    zval = f'{args.focal_lenght * args.camera_offset / (a.x - b.x) :.3f}' if a is not None and b is not None else "n/a"
+                    if a is not None and b is not None:
+                        xl, wl, xr, wr = a.x, a.w, b.x, b.w
+                        xl, wl = edgecorrect(xl, wl, wr)
+                        xr, wr = edgecorrect(xr, wr, wl)
+                        zval = f'{args.focal_lenght * args.camera_offset / (xl - xr) :.3f}'
+                    else:
+                        zval = "n/a"
                     output(bbshow((a, b)) + '\t' + sim + '\t' + zval)
                 else:
                     output(bbshow((a, b)) + '\t' + sim)
