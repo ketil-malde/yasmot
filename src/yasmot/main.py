@@ -40,12 +40,12 @@ def make_args_parser():
     # Tracking
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
-    parser.add_argument('--max-age', '-m', default=2, type=int,
+    parser.add_argument('--max-age', '-m', default=2, type=float,
                         help="""Maximum age to search for old tracks to resurrect.
                                 (in seconds for time stamps, or frames for frame numbers.)""")
-    # parser.add_argument('--timestamp-pattern', '-t', default=None, type=str,
-    #                    help="""Pattern to extract a timestamp from frame ID.""")
-    parser.add_argument('--framenumber-pattern', '-t', default=None, type=str,
+    parser.add_argument('--timestamp', action=argparse.BooleanOptionalAction,
+                        help="""Interpret framenumber as a timestamp.""")
+    parser.add_argument('--framenumber-pattern', default=None, type=str,
                         help="""Pattern to extract the frame number from frame ID.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
     parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
@@ -63,8 +63,8 @@ def main():
     global args
     parser = make_args_parser()
     args = parser.parse_args()
-
-    rnheader = "frame_id\tx\ty\tw\th\tlabel\tprob"
+    if not args.timestamp:
+        args.max_age = int(args.max_age)
 
     # Define (trivial) functions for generating output
     if args.output is None:

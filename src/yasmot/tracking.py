@@ -1,6 +1,7 @@
 # from collections import namedtuple
 from math import exp
 from yasmot.definitions import Track
+from datetime import datetime
 
 # manually inlined below for speed
 def deltas(bb1, bb2):
@@ -143,24 +144,6 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
     return bbs_rest, tracks, unmatched_tracks
 
 
-def get_time_predicate(cur_frame, max_age, pattern):
-    """Check whether a track is still current by checking its last detection against the current frame"""
-
-    def exframeno(frid):
-        t = parse(pattern, frid)
-        if t is None:
-            print(f'Error: invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
-            exit(255)
-        else:
-            return int((t)[0])
-
-    def time_predicate(trk):
-        last = trk.bblist[-1]
-        return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
-
-    return time_predicate
-
-
 def tmatch(bbs, tracks, time_pred, scale, metric):
 
     # Move tracks that are new enough to cur_tracks
@@ -185,6 +168,33 @@ def tmatch(bbs, tracks, time_pred, scale, metric):
         g_trackno += 1
 
 
+def get_time_predicate(cur_frame, max_age, pattern, is_time):
+    """Check whether a track is still current by checking its last detection against the current frame"""
+
+    def exframeno(frid):
+        if is_time:
+            try:
+                t = datetime.strptime(frid, pattern)
+            except ValueError:
+                print(f'Error: timestamp pattern "{pattern}", doesn\'t match frame label "{frid}".')
+                exit(255)
+            else:
+                return t.timestamp()
+        else:
+            t = parse(pattern, frid)
+            if t is None:
+                print(f'Error: invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
+                exit(255)
+            else:
+                return int((t)[0])
+
+    def time_predicate(trk):
+        last = trk.bblist[-1]
+        return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
+
+    return time_predicate
+
+
 def track(frames, metric, args):
     tracks = []
     for i, f in enumerate(frames):
@@ -192,7 +202,7 @@ def track(frames, metric, args):
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         if f.bboxes:
             if args.framenumber_pattern:
-                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, pattern=args.framenumber_pattern)
+                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, pattern=args.framenumber_pattern, is_time=args.timestamp)
             else:
                 def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - args.max_age):i]]
             tmatch(f.bboxes, tracks, time_pred, args.scale, metric)  # match bboxes to tracks (tmatch)
