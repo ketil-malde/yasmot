@@ -60,9 +60,12 @@ Generally, if you have large changes between frames (rapidly moving
 objects or low frame rate, you can try reducing this parameter.
 
 Tracks are maintained across missing detections, this is controlled by
-the parameter `--max_age`.  The age is determined based on the frame
-name, and unless the frame name is a plain number, the extraction can
-be specified with `--time_pattern`.
+the parameter `--max-age`.  The age is in number of frames, and only
+counts frames that are present in the data. To avoid tracks that span
+intervals where the object detectors produced no output, a serial
+number can be extracted with `--framelabel-pattern`.  If `--timestamp`
+is specified in addition, the frame name is parsed as a date with `strptime`
+according to the specified pattern, and age is then in seconds.
 
 In case there are classes representing an unknown or unidentified
 object, it is possible to specify the label with the `--unknown`
