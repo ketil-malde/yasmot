@@ -32,7 +32,7 @@ while read sum cmd; do
 	    status=255
 	fi
     else
-	echo -e "\033[31mSoftware error - FAILED!\033[0m"
+	echo -e "\033[31m *** Program error *** \033[0m"
     fi
     done\
 	<<EOF
