@@ -38,6 +38,8 @@ def make_args_parser():
                         help="""Process stereo images.""")
     parser.add_argument('--unknown-class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
     parser.add_argument('--shape', default=(1228, 1027), type=intpair, help="""Image dimensions, width and height.""")
+    parser.add_argument('--focal-lenght', '-F', default=None, type=float, help="""Camera focal lenght as a fraction of image width""")
+    parser.add_argument('--camera-offset', '-D', default=0, type=float, help="""Distance between left and right camera.""")
 
     # Tracking
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
@@ -137,12 +139,17 @@ def main():
 
     elif args.stereo:  # not tracking, stereo frames
         # just output input_frames (::[Frame])
-        output('#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity')
+        header = '#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity'
+        if args.focal_lenght and args.camera_offset: header = header + '\tz-val'
+        output(header)
         for x in input_frames:
             for a, b in x.bboxes:
-                sim = str(bbdist_stereo(a, b, args.scale)) if a is not None and b is not None else "n/a"
-                # zval = ...
-                output(bbshow((a, b)) + "\t" + sim)
+                sim = f'{bbdist_stereo(a, b, args.scale):.3f}' if a is not None and b is not None else "n/a"
+                if args.focal_lenght and args.camera_offset:
+                    zval = f'{args.focal_lenght * args.camera_offset / (a.x - b.x) :.3f}' if a is not None and b is not None else "n/a"
+                    output(bbshow((a, b)) + '\t' + sim + '\t' + zval)
+                else:
+                    output(bbshow((a, b)) + '\t' + sim)
     else:
         show_frames(input_frames)
 
