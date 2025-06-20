@@ -5,6 +5,7 @@ tags:
   - object detection
   - tracking
   - stereo images
+author: Ketil Malde
 authors:
   - name: Ketil Malde
     orcid: 0000-0001-7381-1849
@@ -182,6 +183,10 @@ The advent of deep learning object detectors like YOLO have brought new object t
 
 Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
 and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
+
+# Availability
+
+The program is available via PyPI (as `pip install yasmot`) or from GitHub [https://github.com/ketil-malde/yasmot](https://github.com/ketil-malde/yasmot).
 
 # Acknowledgments
 
