@@ -145,9 +145,9 @@ def main():
 
         if args.stereo:
             # Note that 'label' here replaces class annotation with track number (from process_tracks())
-            output('#frame_id\txl\tyl\twl\thl\ttrack_l\tprob_l\txr\tyr\twr\thr\ttrack_r\tprob_r\tlabel')
+            output('#frame_id         \txl\tyl\twl\thl\ttrack_l\tprob_l\txr\tyr\twr\thr\ttrack_r\tprob_r\tlabel')
         else:
-            output('#frame_id\tx\ty\tw\th\ttrack\tprob\tlabel')
+            output('#frame_id         \tx\ty\tw\th\ttrack\tprob\tlabel')
         for f in fs:
             for b in f.bboxes:
                 # todo: output class too
@@ -155,14 +155,14 @@ def main():
 
     elif args.stereo:  # not tracking, stereo frames
         # just output input_frames (::[Frame])
-        header = '#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity'
+        header = '#frame_id         \txl\tyl\twl\thl\tlabel_l  \tprob_l\txr\tyr\twr\thr\tlabel_r  \tprob_r\tsimilarity'
         if args.focal_length and args.camera_offset: header = header + '\tz-val'
         if args.fovx or args.fovy: header = header + '\tsize'
         output(header)
         get_geom = get_geometry(args.focal_length, args.camera_offset, args.fovx, args.fovy)
         for x in input_frames:
             for a, b in x.bboxes:
-                sim = f'{bbdist_stereo(a, b, args.scale):.3f}' if a is not None and b is not None else "n/a"
+                sim = f'{bbdist_stereo(a, b, args.scale):.3f}' if a is not None and b is not None else " n/a"
                 geom = get_geom(a, b) if args.focal_length and args.camera_offset else None
                 output(bbshow((a, b)) + f'\t{sim}\t{show_geom(geom)}')
     else:
