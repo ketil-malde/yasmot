@@ -334,7 +334,7 @@ def get_geometry(flength, cam_offset, fovx=None, fovy=None):
             xl, wl = edgecorrect(xl, wl, wr)
             xr, wr = edgecorrect(xr, wr, wl)
             h, w = (hl + hr) / 2, (wl + wr) / 2
-            z = flength * cam_offset / (xl - xr)
+            z = flength * cam_offset / (xl - xr) if xl > xr else 0
 
             width = w * xfactor * z if fovx else None
             height = h * yfactor * z if fovy else None
