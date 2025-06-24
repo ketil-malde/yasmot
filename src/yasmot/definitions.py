@@ -10,7 +10,7 @@ BBox = namedtuple('BBox', ['frameid',            # :: String
 
 def bbshow1(b):
     '''Convert a single BBox to a string'''
-    return f'{b.x:.5f}\t{b.y:.5f}\t{b.w:.5f}\t{b.h:.5f}\t{b.cls}\t{b.pr:.5f}'
+    return f'{b.x:.5f}\t{b.y:.5f}\t{b.w:.5f}\t{b.h:.5f}\t{b.cls:10}\t{100 * b.pr:.1f}'
 
 def bbshow2(pair):
     '''Convert a pair of (stereo) BBoxes to a string'''

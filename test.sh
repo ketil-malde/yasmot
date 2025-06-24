@@ -47,6 +47,7 @@ be5a9a80a1989dcd7bdbbe95c5dc2458d86ff13d python3 -m src.yasmot.main -c tests/con
 209de867e4c3d2ec4b194f449e576c0205e750ed python3 -m src.yasmot.main --max-age 2 --framelabel-pattern \{:d\} -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 68842a31c5b80add4ba6904e9b1d9ddff9afb68c python3 -m src.yasmot.main --max-age 0.2 --framelabel-pattern %Y%m%d%H%M%S%f --timestamp -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 0c663a0239a08ba4d4844db702b983d20a9ba4db python3 -m src.yasmot.main -s --no-track -F 0.73 -D 60 --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
+0 python3 -m src.yasmot.main -s --no-track -F 0.73 -D 60 --fovx 94.4 --shape 1228,1027 tests/ST357_left.csv tests/ST357_right.csv
 EOF
 
 exit $status
