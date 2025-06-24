@@ -210,7 +210,7 @@ def track(frames, metric, args):
     return tracks
 
 
-from math import log
+from math import log, tan, pi
 
 def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
     """From an assoc array of class -> [probs], calculate consensus prob"""
@@ -322,6 +322,28 @@ def interpolate(cur_tracks):
             assert False, "Interpolation: negative number of frames to insert?"
 
     return res
+
+
+def get_geometry(flength, cam_offset, fovx=None, fovy=None):
+    xfactor = 2 * tan(fovx / 180 * pi / 2) if fovx else 0
+    yfactor = 2 * tan(fovy / 180 * pi / 2) if fovy else 0
+
+    def geom(a, b):
+        if a is not None and b is not None:
+            xl, wl, hl, xr, wr, hr = a.x, a.w, a.h, b.x, b.w, b.h
+            xl, wl = edgecorrect(xl, wl, wr)
+            xr, wr = edgecorrect(xr, wr, wl)
+            h, w = (hl + hr) / 2, (wl + wr) / 2
+            z = flength * cam_offset / (xl - xr)
+
+            width = w * xfactor * z if fovx else None
+            height = h * yfactor * z if fovy else None
+            return z, width, height
+        else:
+            return None
+
+    return geom
+
 
 def process_tracks(tracks, interpol=False):
     """Turn a set of tracks back into a set of frames, and a set of

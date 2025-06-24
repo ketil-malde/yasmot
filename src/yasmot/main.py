@@ -38,8 +38,10 @@ def make_args_parser():
                         help="""Process stereo images.""")
     parser.add_argument('--unknown-class', '-u', default=None, type=str, help="""Class to avoid in consensus output""")
     parser.add_argument('--shape', default=(1228, 1027), type=intpair, help="""Image dimensions, width and height.""")
-    parser.add_argument('--focal-lenght', '-F', default=None, type=float, help="""Camera focal lenght as a fraction of image width""")
+    parser.add_argument('--focal-length', '-F', default=None, type=float, help="""Camera focal length as a fraction of image width""")
     parser.add_argument('--camera-offset', '-D', default=0, type=float, help="""Distance between left and right camera.""")
+    parser.add_argument('--fovx', default=None, type=float, help="""Camera horizontal field of view (degrees)""")
+    parser.add_argument('--fovy', default=None, type=float, help="""Camera vertical field of view (degrees)""")
 
     # Tracking
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
@@ -63,6 +65,20 @@ def make_args_parser():
     return parser
 
 import sys
+
+def show_geom(triple):
+    out = ""
+    if not triple:
+        out = "n/a"
+    else:
+        z, w, h = triple
+        if not z:
+            out = "n/a"
+        else:
+            out = f'z={z:.3f}'
+            if w: out += f' w={w:.2f}'
+            if h: out += f' h={h:.2f}'
+    return out
 
 def main():
     global args
@@ -92,7 +108,7 @@ def main():
     ##################################################
     # Perform tracking
     from yasmot.frames import get_frames
-    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, edgecorrect
+    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, edgecorrect, get_geometry
     from yasmot.definitions import frameid, bbshow, getcls
     from yasmot.parser import show_frames
 
@@ -140,22 +156,15 @@ def main():
     elif args.stereo:  # not tracking, stereo frames
         # just output input_frames (::[Frame])
         header = '#frame_id\txl\tyl\twl\thl\tlabel_l\tprob_l\txr\tyr\twr\thr\tlabel_r\tprob_r\tsimilarity'
-        if args.focal_lenght and args.camera_offset: header = header + '\tz-val'
+        if args.focal_length and args.camera_offset: header = header + '\tz-val'
+        if args.fovx or args.fovy: header = header + '\tsize'
         output(header)
+        get_geom = get_geometry(args.focal_length, args.camera_offset, args.fovx, args.fovy)
         for x in input_frames:
             for a, b in x.bboxes:
                 sim = f'{bbdist_stereo(a, b, args.scale):.3f}' if a is not None and b is not None else "n/a"
-                if args.focal_lenght and args.camera_offset:
-                    if a is not None and b is not None:
-                        xl, wl, xr, wr = a.x, a.w, b.x, b.w
-                        xl, wl = edgecorrect(xl, wl, wr)
-                        xr, wr = edgecorrect(xr, wr, wl)
-                        zval = f'{args.focal_lenght * args.camera_offset / (xl - xr) :.3f}'
-                    else:
-                        zval = "n/a"
-                    output(bbshow((a, b)) + '\t' + sim + '\t' + zval)
-                else:
-                    output(bbshow((a, b)) + '\t' + sim)
+                geom = get_geom(a, b) if args.focal_length and args.camera_offset else None
+                output(bbshow((a, b)) + f'\t{sim}\t{show_geom(geom)}')
     else:
         show_frames(input_frames)
 
