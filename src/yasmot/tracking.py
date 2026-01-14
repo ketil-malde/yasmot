@@ -333,9 +333,9 @@ def get_geometry(flength, cam_offset, fovx=None, fovy=None):
             xl, wl, hl, xr, wr, hr = a.x, a.w, a.h, b.x, b.w, b.h
             xl, wl = edgecorrect(xl, wl, wr)
             xr, wr = edgecorrect(xr, wr, wl)
-            h, w = (hl + hr) / 2, (wl + wr) / 2
             z = flength * cam_offset / (xl - xr) if xl > xr else 0
 
+            h, w = (hl + hr) / 2, (wl + wr) / 2
             width = w * xfactor * z if fovx else None
             height = h * yfactor * z if fovy else None
             return z, width, height
@@ -344,6 +344,12 @@ def get_geometry(flength, cam_offset, fovx=None, fovy=None):
 
     return geom
 
+
+def summarize_geom(getgeom, track):
+    """Given a geometry conversion function and a (stereo) track, produce stats on object geometry.
+       This includes range, size, and velocities."""
+
+    pass
 
 def process_tracks(tracks, interpol=False):
     """Turn a set of tracks back into a set of frames, and a set of

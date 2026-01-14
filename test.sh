@@ -36,7 +36,7 @@ while read sum cmd; do
     fi
     done\
 	<<EOF
-6ec8812dff9a788e6453315e134ded7b4ec090c5 python3 -m src.yasmot.parser tests/L.csv
+d9e5719f929ce1f4ae2cac843bf7c7b83a5b9807 python3 -m src.yasmot.parser tests/L.csv
 0ecef4d5feba6f4bca97028100b6b15b8773c1b2 python3 -m src.yasmot.main -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 3f3f539e15b7c759d7c6bc86d284481be83c816f python3 -m src.yasmot.main -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 3dccc135fc11beb20edccde43f671065103e0c33 python3 -m src.yasmot.main tests/lab2
@@ -46,7 +46,7 @@ b0c6a784d284f6e870bade1cf1f0e7949a8c3073 python3 -m src.yasmot.main tests/error3
 23f9e203fea1f638b437fe6382bbad50112aeae9 python3 -m src.yasmot.main -c tests/consensus/y8x*
 457dcfe11cb4014a3db1a6c19fcede246c4ba3a3 python3 -m src.yasmot.main --max-age 2 --framelabel-pattern \{:d\} -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 3f3f539e15b7c759d7c6bc86d284481be83c816f python3 -m src.yasmot.main --max-age 0.2 --framelabel-pattern %Y%m%d%H%M%S%f --timestamp -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-c7d198a961a2f3c742964cc42fc137ea5bd48482 python3 -m src.yasmot.main -s --no-track -F 0.73 -D 60 --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-5c7eebe0928b6261263a33c95884f2efee93328a python3 -m src.yasmot.main -s --no-track -F 0.73 -D 60 --fovx 94.4 --shape 1228,1027 tests/ST357left.csv tests/ST357right.csv
+d30cc01c23e4e6701bfacf07426fca0de1120fa2 python3 -m src.yasmot.main -s --no-track -F 0.765 -D 60 --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
+a74b7e345ac02c52ad152a4d676b27e73dd262f9 python3 -m src.yasmot.main -s --no-track -F 0.765 -D 60 --fovx 94.4 --shape 1184,1000 tests/ST357left.csv tests/ST357right.csv
 EOF
 

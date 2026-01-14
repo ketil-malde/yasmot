@@ -108,7 +108,7 @@ def main():
     ##################################################
     # Perform tracking
     from yasmot.frames import get_frames
-    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, edgecorrect, get_geometry
+    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, get_geometry
     from yasmot.definitions import frameid, bbshow, getcls
     from yasmot.parser import show_frames
 
