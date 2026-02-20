@@ -25,7 +25,7 @@ bibliography: paper.bib
 
 # Summary
 
-There now exists many popular object detectors based on deep learning
+There now exist a number popular object detectors based on deep learning
 that can analyze images and extract locations and class labels for
 occurrences of objects.  For image time series (_i.e._, video or
 sequences of stills), tracking objects over time and preserving object
@@ -41,45 +41,52 @@ stereoscopic camera configurations to improve track quality and consensus identi
 # Statement of need
 
 For many image analysis tasks, locating and identifying specific objects in each image is an important step.
-For instance, using a trawl camera might reduce or even eliminate the need to catch physical samples for marine stock assessment [@deepvision], but individual fish need to be identified accurately, and the high data volumes involved requires the analysis to be automated.  The recent availability of a large number of capable deep learning object detectors, like the YOLO family [@Redmon_2016_CVPR;@terven2023comprehensive;@jiang2022review], EfficientDet [@edet] Mask R-CNN [@he2017mask], RT-DETR [@zhao2024detrs;lv2024rt] has made this achievable.
+For instance, using a trawl camera might reduce or even eliminate the need to catch physical samples for marine stock assessment [@deepvision], but individual fish need to be identified accurately, and the high data volumes involved requires the analysis to be automated.  The recent availability of a large number of capable deep learning object detectors, like the YOLO family [@Redmon_2016_CVPR;@terven2023comprehensive;@jiang2022review], EfficientDet [@edet] Mask R-CNN [@he2017mask], RT-DETR [@zhao2024detrs;@lv2024rt] has made this achievable.
 
-When images are captured over time in the form of video or a stream of still images taken at intervals, it is often necessary to perform tracking, _viz.,_ link detections that correspond to the same object across frames.
+When images are captured over time in the form of video or a stream of still images taken at intervals, it is often necessary to perform tracking, that is, linking detections that correspond to the same object in different frames.
 
-<!-- tracking is important -->
+<!-- why tracking is important -->
 
 Here we present `yasmot`, a multi-object tracker, implemented in Python, and available
-under a GPLv2 license.  In addition to tracking objects over time, it
-can link observations between left and right cameras in a stereo
-configuration, which further improves detection performance, and
-it can extract depth information and estimate object sizes using stereo information.
+under a GPLv2 license.
 
-It has been tested on the output from RetinaNet [@lin2018focallossdenseobject] and YOLO v5 and v8
-object detectors.
+In contrast other popular object trackers `yasmot` can process stereo images directly, linking observations between the left and right
+camera, and estimating depth information and object sizes based on the inferred 3D geometry.  
+Using both cameras in an ensemble also strengthens the object classification accuracy, and `yasmot` extends
+this ensemble functionality to an arbitrary number of object prediction streams.  It can thus be used to generate consensus
+predictions from multiple independent object detectors.
 
-In contrast to more complex approaches that rely on analyzing the
-image contents (cf. Related Work, below), `yasmot` works with
+Some advanced trackers .... rely on ..... a representation of contents
+
+like ByteTrack [@zhang2022bytetrack] and DeepSORT [@], 
+
+can infer intermediate missing detection, can jump outside the (IoU) box.
+
+ image contents (cf. Related Work, below), `yasmot` works with
 detections only, reading observations from a separate object detector,
 and linking them across time based on the relative position and
 dimensions of bounding boxes and on the classification labels and
 confidence scores.  As a result, `yasmot` is a fast, lightweight alternative with few dependencies.
 
-<!-- how it works -->
-
-Tracks are calculated by calculating distances between detections in two frames, and finding an optimal pairing using the Hungarian algorithm [@kuhn1955hungarian].
-Distances are calculated by applying a Gaussian to detection parameters (i.e., position and size coordinates) separately.  In contrast to IoU-based distances, the use of Gaussian distances allows detections to be connected even if non-overlapping, which is important for low frame rates and between stereo frames of objects close to the camera.  The sharpness of the Gaussian is controlled by the `--scale` parameters (see below).  The Hungarian algorithm solves assignment on a bipartite graph, so it can only work on two frames at a time.  It is possible to generalize it to consider multiple simultaneous frames (for instance, when calculating consensus from multiple detectors or tracking stereo images over time), but the computational cost become prohibitive and a heuristic is used instead.
-
 # State of the field
 
 Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL, KCF, CSRT, MedianFlow, TLD, MOSSE, and GOTURN [@opencv_library]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple], which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
 
-The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and the popular implementations of YOLO by Ultralytics [@yolov8_ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
+The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and the popular implementations of YOLO by Ultralytics [@yolov8_ultralytics] integrate two such tracking algorithms, ByteTrack [@zhang2022bytetrack] and BoT-SORT [@aharon2022bot].  ByteTrack processes object detection model output (usually with a very low detection threshold) to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT, on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
 
-Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
-and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
+Other object trackers that examine the contents detected objects to support tracking Tracktor++ [@bergmann2019tracking],
+and DeepSORT [@wojke2017simple], which use features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
+
+In spite of the usefulness of stereo camera setups for scientific tasks, there appear to be few trackers supporting stereo cameras images directly.  Two examples are StereoSORT [@lee2025real], which tracks the left and right images separately before merging the results, and StereoYOLO [@shang2024stereoyolo], which targets martime applications using the YOLO object detector.
 
 # Software design
 
-<!-- installation? -->
+<!-- how it works -->
+
+Only detector output - i.e. detector agnostic.
+
+Tracks are determined by calculating distances between detections in two frames, and finding an optimal pairing using the Hungarian algorithm [@kuhn1955hungarian].
+Distances are calculated by applying a Gaussian to detection parameters (i.e., position and size coordinates) separately.  In contrast to other trackers using IoU-based distances, the use of Gaussian distances allows detections to be connected even if non-overlapping, which is important for low frame rates and between stereo frames of objects close to the camera.  The sharpness of the Gaussian is controlled by the `--scale` parameters (see below).  The Hungarian algorithm solves assignment on a bipartite graph, so it can only work on two frames at a time.  It is possible to generalize it to consider multiple simultaneous frames (for instance, when calculating consensus from multiple detectors or tracking stereo images over time), but the computational cost become prohibitive and a heuristic is used instead.
 
 ## Controlling tracking sensitivity
 
@@ -112,8 +119,8 @@ for a track.
 ## Tracking stereo images
 
 The `-s` option links objects taken with a stereoscopic camera setup.
-Normally tracks will be generated, but the `--no-track` option can be
-specified to only link detections between the cameras, and not in time.
+Normally tracks will be also generated, but the `--no-track` option can be
+specified to only link detections between the left and right cameras at each time, and not track objects over time.
 
 ## Ensemble predictions
 
@@ -130,7 +137,7 @@ fractional images, i.e. values in the range from 0 to 1.  Other object
 detectors, like RetinaNet [@lin2018focallossdenseobject], may output a CSV file
 with pixel-based coordinates.  Since `yasmot` does not require
 the images to be available, you therefore may need to specify the pixel size of
-the images, e.g. as `--shape 1228,1027` when using pixel-based coordinates.
+the images (WIDTH,HEIGHT), e.g. as `--shape 1228,1027` when using pixel-based coordinates.
 
 ## Output formats
 
@@ -168,7 +175,7 @@ Interpolation creates virtual annotations to fill in gaps (i.e., missing detecti
 Here, we only connect tracks with a maximum of two frames without
 detections.  The frames in `tests/lab` are named `frame_000152.txt`,
 `frame_000153.txt`, and so on, and the `--time_pattern` expression must
-match this format.
+match this format.  Note that the brackets are escaped to prevent the shell from processing them.
 
     yasmot --max_age 2 --time_pattern frame_\{:d\}.txt tests/lab2
 
@@ -192,9 +199,12 @@ ensemble predictions:
 
     yasmot -c tests/consensus/y8x*
 
-## Availability
+## Availability and installation
 
 The program is available via PyPI (as `pip install yasmot`) or from GitHub [https://github.com/ketil-malde/yasmot](https://github.com/ketil-malde/yasmot).
+
+# Research impact statement
+
 
 # AI usage disclosure
 
