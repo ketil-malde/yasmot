@@ -1,5 +1,5 @@
 ---
-title: 'YASMOT: Yet another stereo image multi-object tracker'
+title: 'YASMOT: Object tracking for stereo images'
 tags:
   - Python
   - object detection
@@ -9,13 +9,11 @@ author: Ketil Malde
 authors:
   - name: Ketil Malde
     orcid: 0000-0001-7381-1849
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
+    affiliation: 1
 affiliations:
  - name: Institute of Marine Research, Bergen, Norway
    index: 1
- - name: Department of Informatics, University of Bergen, Norway
-   index: 2
-date: 2025-06-19
+date: 2026
 bibliography: paper.bib
 ---
 
@@ -35,20 +33,28 @@ identity can help to improve object detection performance, and is
 necessary for many downstream tasks, including classifying and
 predicting behaviors, and estimating total abundances.  Here we
 present `yasmot`, a lightweight and flexible object tracker that can
-process the output from popular object detectors and track objects
-over time from either monoscopic or stereoscopic camera
-configurations.  In addition, it includes functionality to generate
-consensus detections from ensembles of object detectors.
+process the output from popular object detectors to track objects over time.
+In addition, it incorporates generate consensus detections from ensembles of object detectors.
+In contrast to many popular trackers, `yasmot` can leverage
+stereoscopic camera configurations to improve track quality and consensus identification of object types, and to estimate their size.
 
 # Statement of need
 
-`yasmot` is a multi-object tracker, implemented in Python, and available
+For many image analysis tasks, locating and identifying specific objects in each image is an important step.
+For instance, using a trawl camera might reduce or even eliminate the need to catch physical samples for marine stock assessment [@deepvision], but individual fish need to be identified accurately, and the high data volumes involved requires the analysis to be automated.  The recent availability of a large number of capable deep learning object detectors, like the YOLO family [@Redmon_2016_CVPR;@terven2023comprehensive;@jiang2022review], EfficientDet [@edet] Mask R-CNN [@he2017mask], RT-DETR [@zhao2024detrs;lv2024rt] has made this achievable.
+
+When images are captured over time in the form of video or a stream of still images taken at intervals, it is often necessary to perform tracking, _viz.,_ link detections that correspond to the same object across frames.
+
+<!-- tracking is important -->
+
+Here we present `yasmot`, a multi-object tracker, implemented in Python, and available
 under a GPLv2 license.  In addition to tracking objects over time, it
 can link observations between left and right cameras in a stereo
 configuration, which further improves detection performance, and
-allows extracting depth information and estimate the sizes of objects.
-It has been tested on the output from RetinaNet [@lin2018focallossdenseobject] the YOLO family [@Redmon_2016_CVPR]
-of object detectors.
+it can extract depth information and estimate object sizes using stereo information.
+
+It has been tested on the output from RetinaNet [@lin2018focallossdenseobject] and YOLO v5 and v8
+object detectors.
 
 In contrast to more complex approaches that rely on analyzing the
 image contents (cf. Related Work, below), `yasmot` works with
@@ -57,10 +63,21 @@ and linking them across time based on the relative position and
 dimensions of bounding boxes and on the classification labels and
 confidence scores.  As a result, `yasmot` is a fast, lightweight alternative with few dependencies.
 
+<!-- how it works -->
+
 Tracks are calculated by calculating distances between detections in two frames, and finding an optimal pairing using the Hungarian algorithm [@kuhn1955hungarian].
 Distances are calculated by applying a Gaussian to detection parameters (i.e., position and size coordinates) separately.  In contrast to IoU-based distances, the use of Gaussian distances allows detections to be connected even if non-overlapping, which is important for low frame rates and between stereo frames of objects close to the camera.  The sharpness of the Gaussian is controlled by the `--scale` parameters (see below).  The Hungarian algorithm solves assignment on a bipartite graph, so it can only work on two frames at a time.  It is possible to generalize it to consider multiple simultaneous frames (for instance, when calculating consensus from multiple detectors or tracking stereo images over time), but the computational cost become prohibitive and a heuristic is used instead.
 
-# Usage and options
+# State of the field
+
+Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL, KCF, CSRT, MedianFlow, TLD, MOSSE, and GOTURN [@opencv_library]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple], which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
+
+The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and the popular implementations of YOLO by Ultralytics [@yolov8_ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
+
+Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
+and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
+
+# Software design
 
 <!-- installation? -->
 
@@ -129,7 +146,7 @@ parameters specified:
    observations that constitute each track.
  - `outfile.pred` - per track consensus class predictions.
 
-# Examples
+## Examples
 
 The following examples are taken from the included test suite and the
 data files can be found in the `tests` directory.
@@ -175,18 +192,13 @@ ensemble predictions:
 
     yasmot -c tests/consensus/y8x*
 
-# Related work
-
-Tracking objects has long been recognized as a fundamental task in computer vision, with applications ranging from surveillance to autonomous systems. The widely-used image processing library OpenCV has incorporated several algorithms and components dedicated to object tracking, reflecting the task’s importance. These include BOOSTING, MIL, KCF, CSRT, MedianFlow, TLD, MOSSE, and GOTURN [@opencv_library]. Each of these methods offers distinct approaches to balancing speed, accuracy, and robustness, catering to a variety of real-time tracking needs.  Another commonly used tool is SORT (Simple Online and Realtime Tracking) [@bewley2016simple], which uses uses a Kalman filter to predict object motion and associates predictions with detections using Intersection over Union (IoU).
-
-The advent of deep learning object detectors like YOLO have brought new object tracking tools to the fore, and the popular implementations of YOLO by Ultralytics [@yolov8_ultralytics] integrate two such tracking algorithms, ByteTrack and BoT-SORT.  Like yasmot, ByteTrack processes object detection model output to associate bounding boxes across frames, but it uses intersection over union (IoU) instead of Gaussian distances to link detections.  BoT-SORT [@aharon2022bot], on the other hand, extends SORT by incorporating additional motion and appearance cues to enhance tracking precision.
-
-Other object trackers that examine the detected objects to support tracking Tracktor++ [@bergmann2019tracking],
-and DeepSORT [@wojke2017simple], which similarly to BoT-SORT extends SORT with features from a deep learning model to matches detections across frames more reliably, particularly in crowded or dynamic environments.
-
-# Availability
+## Availability
 
 The program is available via PyPI (as `pip install yasmot`) or from GitHub [https://github.com/ketil-malde/yasmot](https://github.com/ketil-malde/yasmot).
+
+# AI usage disclosure
+
+A large language model was used to review drafts and offer suggestions for improvement. All suggestions were manually reviewed.  AI has not been used for direct generation of code or text.
 
 # Acknowledgments
 
@@ -194,4 +206,3 @@ This work was developed using data from the CoastVision (RCN 325862) and CRIMAC 
 after productive discussions with Vaneeda Allken, Taraneh Westergerling, and Peter Liessem.
 
 # References
-
