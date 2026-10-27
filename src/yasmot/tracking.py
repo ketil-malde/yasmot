@@ -146,19 +146,15 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
 
 def tmatch(bbs, tracks, time_pred, scale, metric):
 
-    # Move tracks that are new enough to cur_tracks
-    cur_tracks = []
-    while len(tracks) > 0 and time_pred(tracks[0]):
-        cur_tracks.append(tracks.pop(0))
+    # Partition all tracks by time_pred without assuming sorted order
+    cur_tracks = [t for t in tracks if time_pred(t)]
+    stale_tracks = [t for t in tracks if not time_pred(t)]
 
-    # Match new bboxes to tracks
+    # Match new bboxes to active tracks
     bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric)
 
-    # New tracks are: matched ++ unmatched ++ old tracks
-    for t in unmatched:
-        tracks.insert(0, t)
-    for t in matched:
-        tracks.insert(0, t)
+    # Recombine: active tracks first, followed by stale tracks
+    tracks[:] = matched + unmatched + stale_tracks
 
     # Create new tracks for unmatched bboxes (i.e. bbs_rest).
     global g_trackno
