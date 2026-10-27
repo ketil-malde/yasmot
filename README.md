@@ -57,7 +57,7 @@ are ranked when considered for tracking (or stereo matching).  The
 algorithm uses a Gaussian score for position and size, and this
 parameter controls the sharpness (or temperature) of the Gaussian.
 Generally, if you have large changes between frames (rapidly moving
-objects or low frame rate, you can try reducing this parameter.
+objects or low frame rate) you can try increasing this parameter.
 
 Tracks are maintained across missing detections, this is controlled by
 the parameter `--max-age`.  The age is in number of frames, and only
