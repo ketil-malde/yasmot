@@ -1,12 +1,13 @@
 # Convert inputs to a stream (list) of frames
 from yasmot.parser import read_frames
-from yasmot.definitions import error, Frame, BBox
+from yasmot.definitions import Frame, BBox
 from yasmot.tracking import bbmatch, bbdist_stereo, bbdist_track, summarize_probs
 
 
 def merge_frames(fs):
     (f1, f2) = fs
-    assert f1.frameid == f2.frameid, f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}"
+    if f1.frameid != f2.frameid:
+        raise ValueError(f"Error: frameids don't match: {f1.frameid} vs {f2.frameid}")
     bbpairs = bbmatch(f1.bboxes, f2.bboxes, metric=bbdist_stereo, scale=1)
     return Frame(frameid=f1.frameid, bboxes=bbpairs)
 
@@ -20,7 +21,8 @@ def zip_frames(lists):
         heads = [l[0] if l != [] else None for l in lists]
         tails = [l[1:] if l != [] else [] for l in lists]
         myframe = min([h.frameid for h in heads if h is not None])
-        assert cur < myframe, 'Error: frames not in lecially increasing order'
+        if not (cur < myframe):
+            raise ValueError('Error: frames not in lecially increasing order')
         cur = myframe
         res = []
 
@@ -36,7 +38,7 @@ def zip_frames(lists):
         lists = tails
     return results
 
-def consensus_frame(tup, args):
+def consensus_frame(tup, scale=1.0, unknown_class=None):
     """Build consensus for a tuple of frames"""
 
     def consensus(bbpair, i):
@@ -72,8 +74,8 @@ def consensus_frame(tup, args):
                 res[c] = [p]
             else:
                 res[c].append(p)
-        cls, _1, _2 = summarize_probs(res, unknown=args.unknown_class)
-        return args.unknown_class if cls is None else cls
+        cls, _1, _2 = summarize_probs(res, unknown=unknown_class)
+        return unknown_class if cls is None else cls
 
     myframe = tup[0].frameid
     mybboxes = [bb._replace(cls=[(bb.cls, bb.pr)]) for bb in tup[0].bboxes]
@@ -81,42 +83,44 @@ def consensus_frame(tup, args):
     i = 0
     for t in tup[1:]:
         if t.frameid != myframe:
-            error(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
+            raise ValueError(f'FrameID mismatch ("{t.frameid}" vs "{myframe}")')
         else:
             i = i + 1  # todo: whops, only if not None
-            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=args.scale)]
+            mybboxes = [consensus(pair, i) for pair in bbmatch(mybboxes, t.bboxes, metric=bbdist_track, scale=scale)]
     return Frame(frameid=myframe, bboxes=[bb._replace(cls=select_class(bb.cls)) for bb in mybboxes])
 
 
-def get_frames(args):
-    if args.consensus and args.stereo:
-        error('Unsupported combination of arguments:\n' + str(args))
+def get_frames(files, shape=(1228, 1027), stereo=False, consensus=False, scale=1.0, unknown_class=None):
+    if consensus and stereo:
+        raise ValueError('Unsupported combination of arguments: consensus and stereo cannot both be enabled.')
 
     ##################################################
     # Read in the detections as a stream of stereo frames
-    elif args.stereo:
-        if len(args.FILES) == 2:
-            [fr_left, fr_right] = [read_frames(f, shape=args.shape) for f in args.FILES]
+    elif stereo:
+        if len(files) == 2:
+            [fr_left, fr_right] = [read_frames(f, shape=shape) for f in files]
             res1 = []
             for t in zip_frames([fr_left, fr_right]):
                 res1.append(merge_frames(t))
         else:
-            error(f'Wrong number of files {len(args.FILES)} instead of 2.')
+            raise ValueError(f'Wrong number of files {len(files)} instead of 2.')
     ##################################################
     # Read a list of annotations to construct consensus frames
-    elif args.consensus:
-        fs = [read_frames(f, shape=args.shape) for f in args.FILES]
+    elif consensus:
+        if not files:
+            raise ValueError('No files specified.')
+        fs = [read_frames(f, shape=shape) for f in files]
         res1 = []
         for t in zip_frames(fs):
-            res1.append(consensus_frame(t, args))
+            res1.append(consensus_frame(t, scale=scale, unknown_class=unknown_class))
     ##################################################
     # Just a regular annotation file/directory
     else:
-        if len(args.FILES) == 1:
-            res1 = read_frames(args.FILES[0], shape=args.shape)
-        elif len(args.FILES) > 1:
-            error('Too many files, maybe you meant -s or -c?')
+        if len(files) == 1:
+            res1 = read_frames(files[0], shape=shape)
+        elif len(files) > 1:
+            raise ValueError('Too many files, maybe you meant -s or -c?')
         else:
-            error('No files specified?  Use --help for help.')
+            raise ValueError('No files specified?  Use --help for help.')
 
     return res1

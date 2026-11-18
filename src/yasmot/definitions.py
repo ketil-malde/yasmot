@@ -47,8 +47,3 @@ Frame = namedtuple('Frame', ['frameid', 'bboxes'])  # :: String and [BBox]
 BBpair = namedtuple('BBPair', ['bbleft', 'bbright'])  # :: two BBoxes
 
 Track = namedtuple('Track', ['trackid', 'bblist'])  # :: Int and [BBox] or [BBpair] if stereo
-
-import sys
-def error(msg):
-    sys.stderr.write(msg + '\n')
-    exit(255)

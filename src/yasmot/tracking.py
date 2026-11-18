@@ -164,23 +164,21 @@ def tmatch(bbs, tracks, time_pred, scale, metric):
         g_trackno += 1
 
 
-def get_time_predicate(cur_frame, max_age, pattern, is_time):
+def get_time_predicate(cur_frame, max_age, pattern, is_time=False):
     """Check whether a track is still current by checking its last detection against the current frame"""
 
     def exframeno(frid):
         if is_time:
             try:
                 t = datetime.strptime(frid, pattern)
-            except ValueError:
-                print(f'Error: timestamp pattern "{pattern}", doesn\'t match frame label "{frid}".')
-                exit(255)
+            except ValueError as e:
+                raise ValueError(f'Timestamp pattern "{pattern}", doesn\'t match frame label "{frid}".') from e
             else:
                 return t.timestamp()
         else:
             t = parse(pattern, frid)
             if t is None:
-                print(f'Error: invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
-                exit(255)
+                raise ValueError(f'Invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
             else:
                 return int((t)[0])
 
@@ -191,17 +189,17 @@ def get_time_predicate(cur_frame, max_age, pattern, is_time):
     return time_predicate
 
 
-def track(frames, metric, args):
+def track(frames, metric=bbdist_track, scale=1.0, max_age=2, framelabel_pattern=None, timestamp=False):
     tracks = []
     for i, f in enumerate(frames):
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         if f.bboxes:
-            if args.framelabel_pattern:
-                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=args.max_age, pattern=args.framelabel_pattern, is_time=args.timestamp)
+            if framelabel_pattern:
+                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=max_age, pattern=framelabel_pattern, is_time=timestamp)
             else:
-                def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - args.max_age):i]]
-            tmatch(f.bboxes, tracks, time_pred, args.scale, metric)  # match bboxes to tracks (tmatch)
+                def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - max_age):i]]
+            tmatch(f.bboxes, tracks, time_pred, scale, metric)  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
 
@@ -227,7 +225,7 @@ def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
         for r in res:
             for p in assoc[cl]:
                 if p <= 0 or p > 1:
-                    print(f'Whops: p={p}')
+                    raise ValueError(f'Invalid probability: p={p}')
                 # Set floor and ceiling for p
                 if p < 0.001: p = 0.001
                 if p > 0.999: p = 0.999
@@ -246,12 +244,9 @@ def summarize_probs(assoc, num_classes=None, unknown=None):  # TODO: ignore=None
             cur = r
             curmax = res[r]
     totp = 0
-    try:
-        for r in res:
-            totp += exp(res[r] - maxlogit)
-        totp += exp(other - maxlogit)
-    except OverflowError:
-        print(res, other)
+    for r in res:
+        totp += exp(res[r] - maxlogit)
+    totp += exp(other - maxlogit)
     return cur, 1 / totp, res
 
 from yasmot.definitions import frameid, setid
@@ -315,7 +310,7 @@ def interpolate(cur_tracks):
         elif ix1 - ix0 == 1:
             res.append(c)
         else:
-            assert False, "Interpolation: negative number of frames to insert?"
+            raise ValueError("Interpolation: negative number of frames to insert?")
 
     return res
 
