@@ -7,7 +7,8 @@ from yasmot.definitions import BBox, Frame, bbshow
 # Relative coordinates (0-1). Sequence: center_x center_y width height, y (y is from top of frame)
 def tobbx_yolo(fn, l):
     ln = l.strip().split(' ')
-    assert len(ln) == 6, f'Yolo-style annotations but wrong number of parameters: {ln}'
+    if len(ln) != 6:
+        raise ValueError(f'Yolo-style annotations but wrong number of parameters: {ln}')
     return BBox(frameid=fn, x=float(ln[1]), y=float(ln[2]), w=float(ln[3]), h=float(ln[4]), cls=ln[0], pr=float(ln[5]))
 
 def parse_yolodir(dirname):
@@ -24,11 +25,14 @@ def parse_yolodir(dirname):
 # For RetinaNet outputs: filename, x1 y1 x2 y2 class prob
 
 def tobbx_retina(ln, shape):
-    assert len(ln) == 7, f'RetinaNet-style annotations but wrong number of parameters: {len(ln)} instead of 7'
+    if len(ln) != 7:
+        raise ValueError(f'RetinaNet-style annotations but wrong number of parameters: {len(ln)} instead of 7')
     xm, ym = shape
     x1, y1, x2, y2 = float(ln[1]) / xm, float(ln[2]) / ym, float(ln[3]) / xm, float(ln[4]) / ym
-    assert all([s >= 0 and s <= 1 for s in [x1, y1, x2, y2]]), f'Illegal values in RN bbox:\n  {ln}\n  {shape}'
-    assert x2 > x1 and y2 > y1, f'RetinaNet annotations but second point smaller: {x1, y1} vs {x2, y2}:\n  {ln}'
+    if not all([s >= 0 and s <= 1 for s in [x1, y1, x2, y2]]):
+        raise ValueError(f'Illegal values in RN bbox:\n  {ln}\n  {shape}')
+    if not (x2 > x1 and y2 > y1):
+        raise ValueError(f'RetinaNet annotations but second point smaller: {x1, y1} vs {x2, y2}:\n  {ln}')
     return BBox(frameid=ln[0], x=(x1 + x2) / 2, y=(y1 + y2) / 2, w=x2 - x1, h=y2 - y1, cls=ln[5], pr=float(ln[6]))
 
 def merge_bbs(bs):
@@ -38,10 +42,12 @@ def merge_bbs(bs):
         if fs == [] or b.frameid == fs[0].frameid:
             fs.append(b)
         else:
-            assert b.frameid > fs[0].frameid, 'FrameIDs should be lexicographically ordered'
+            if b.frameid <= fs[0].frameid:
+                raise ValueError('FrameIDs should be lexicographically ordered')
             res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
             fs = [b]
-    res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
+    if fs:
+        res.append(Frame(frameid=fs[0].frameid, bboxes=fs))
     return res
 
 def parse_retina(fname, shape):  # File -> [Frame]
@@ -57,8 +63,7 @@ def parse_retina(fname, shape):  # File -> [Frame]
 def read_frames(fn, shape=(1228,1027)):
     """Read all frames from a file (RetinaNet format) or directory (YOLO)"""
     if not exists(fn):
-        print(f'No such file or directory: {fn}', file=sys.stderr)
-        sys.exit(-1)
+        raise FileNotFoundError(f'No such file or directory: {fn}')
 
     if isdir(fn):  # yolo
         return parse_yolodir(fn)
@@ -90,14 +95,14 @@ def write_rn(of, fs, shape=(1228, 1027)):
 
 def write_frames(outfile, fs):
     if exists(outfile):  # does this handle trailing slash?
-        print(f'{outfile} already exists - aborting.', file=sys.stderr)
+        raise FileExistsError(f'{outfile} already exists - aborting.')
     elif outfile[-1] == '/':
         mkdir(outfile)
         write_yolo(outfile, fs)
     elif outfile[-4:] == '.csv':
         write_rn(outfile, fs)
     else:
-        print('Specify an outfile ending in .csv or /', file=sys.stderr)
+        raise ValueError('Specify an outfile ending in .csv or /')
 
 # Testing
 if __name__ == "__main__":

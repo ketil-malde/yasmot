@@ -11,17 +11,21 @@
 #    Extract tracks from video frames/sequential stills
 
 import argparse
+import sys
 from parse import parse
+from yasmot.frames import get_frames
+from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, get_geometry
+from yasmot.definitions import frameid, bbshow, getcls
+from yasmot.parser import show_frames
 
 
 def intpair(s):
     """Parse a pair of integers from the command line"""
-    w, h = parse("{:d},{:d}", s)
-    if w is None or h is None:
-        print(f'Error: can\'t parse {s} as a pair of integers')
-        exit(255)
-    else:
-        return (int(w), int(h))
+    res = parse("{:d},{:d}", s)
+    if res is None:
+        raise ValueError(f"Error: can't parse {s} as a pair of integers")
+    w, h = res
+    return (int(w), int(h))
 
 
 desc = """Track detected objects, optionally linking stereo images and/or
@@ -47,6 +51,8 @@ def make_args_parser():
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
+    parser.add_argument('--velocity', default=True, action=argparse.BooleanOptionalAction,
+                        help="""Use constant-velocity prediction when matching tracks.""")
 
     # Allowing gaps in tracks
     parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
@@ -64,8 +70,6 @@ def make_args_parser():
                         help='Files or directories to process')
     return parser
 
-import sys
-
 def show_geom(triple):
     out = ""
     if not triple:
@@ -81,7 +85,6 @@ def show_geom(triple):
     return out
 
 def main():
-    global args
     parser = make_args_parser()
     args = parser.parse_args()
     if not args.timestamp:
@@ -107,12 +110,14 @@ def main():
 
     ##################################################
     # Perform tracking
-    from yasmot.frames import get_frames
-    from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, get_geometry
-    from yasmot.definitions import frameid, bbshow, getcls
-    from yasmot.parser import show_frames
-
-    input_frames = get_frames(args)
+    input_frames = get_frames(
+        args.FILES,
+        shape=args.shape,
+        stereo=args.stereo,
+        consensus=args.consensus,
+        scale=args.scale,
+        unknown_class=args.unknown_class,
+    )
 
     if args.track:
         # todo: if pattern/enumeration is given, insert empty frames
@@ -124,7 +129,15 @@ def main():
 
         def firstframe(t): return frameid(t.bblist[0])
 
-        ts = track(input_frames, metric, args)
+        ts = track(
+            input_frames,
+            metric=metric,
+            scale=args.scale,
+            max_age=args.max_age,
+            framelabel_pattern=args.framelabel_pattern,
+            timestamp=args.timestamp,
+            velocity=args.velocity,
+        )
         ts.sort(key=firstframe)
 
         # print(f'*** Created number of tracks: {len(ts)}, total bboxes {len([b for f in ts for b in f.bblist])}')

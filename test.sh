@@ -32,21 +32,23 @@ while read sum cmd; do
 	    status=255
 	fi
     else
-	echo -e "\033[31m *** Program error *** \033[0m"
+	    echo -e "\033[31m *** Program error *** \033[0m"
+        status=255
     fi
     done\
 	<<EOF
 d9e5719f929ce1f4ae2cac843bf7c7b83a5b9807 python3 -m src.yasmot.parser tests/L.csv
 0ecef4d5feba6f4bca97028100b6b15b8773c1b2 python3 -m src.yasmot.main -s --no-track --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-3f3f539e15b7c759d7c6bc86d284481be83c816f python3 -m src.yasmot.main -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-3dccc135fc11beb20edccde43f671065103e0c33 python3 -m src.yasmot.main tests/lab2
-3dccc135fc11beb20edccde43f671065103e0c33 python3 -m src.yasmot.main --max-age 2 --framelabel-pattern frame_\{:d\}.txt tests/lab2
+38cf2d1a6546c07e676dfff115c25b165fdbea7e python3 -m src.yasmot.main -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
+e49b7ef985bbdb604a9822cf36cbde244ecdc10f python3 -m src.yasmot.main tests/lab2
+e49b7ef985bbdb604a9822cf36cbde244ecdc10f python3 -m src.yasmot.main --max-age 2 --framelabel-pattern frame_\{:d\}.txt tests/lab2
 b0c6a784d284f6e870bade1cf1f0e7949a8c3073 python3 -m src.yasmot.main tests/error3.csv
 5173404842612b4711d8b4396eedbab42b155205 python3 -m src.yasmot.main tests/lab2 --interpolate --max-age 3
 23f9e203fea1f638b437fe6382bbad50112aeae9 python3 -m src.yasmot.main -c tests/consensus/y8x*
 457dcfe11cb4014a3db1a6c19fcede246c4ba3a3 python3 -m src.yasmot.main --max-age 2 --framelabel-pattern \{:d\} -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
-3f3f539e15b7c759d7c6bc86d284481be83c816f python3 -m src.yasmot.main --max-age 0.2 --framelabel-pattern %Y%m%d%H%M%S%f --timestamp -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
+38cf2d1a6546c07e676dfff115c25b165fdbea7e python3 -m src.yasmot.main --max-age 0.2 --framelabel-pattern %Y%m%d%H%M%S%f --timestamp -s --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 d30cc01c23e4e6701bfacf07426fca0de1120fa2 python3 -m src.yasmot.main -s --no-track -F 0.765 -D 60 --shape 1228,1027 tests/stereo1_Left.csv tests/stereo1_Right.csv
 a74b7e345ac02c52ad152a4d676b27e73dd262f9 python3 -m src.yasmot.main -s --no-track -F 0.765 -D 60 --fovx 94.4 --shape 1184,1000 tests/ST357left.csv tests/ST357right.csv
 EOF
 
+exit $status
