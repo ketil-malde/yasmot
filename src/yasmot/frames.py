@@ -1,8 +1,8 @@
 # Convert inputs to a stream (list) of frames
 from yasmot.parser import read_frames
 from yasmot.definitions import Frame, BBox
-from yasmot.tracking import bbmatch, bbdist_stereo, bbdist_track, summarize_probs
-
+from yasmot.tracking import bbmatch, summarize_probs
+from yasmot.metrics import bbdist_stereo, bbdist_track
 
 def merge_frames(fs):
     (f1, f2) = fs

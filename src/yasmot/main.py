@@ -13,8 +13,10 @@
 import argparse
 import sys
 from parse import parse
+
 from yasmot.frames import get_frames
-from yasmot.tracking import track, bbdist_track, bbdist_stereo, bbdist_pair, summarize_probs, process_tracks, get_geometry
+from yasmot.tracking import track, summarize_probs, process_tracks
+from yasmot.metrics import bbdist_track, bbdist_stereo, bbdist_pair, get_geometry
 from yasmot.definitions import frameid, bbshow, getcls
 from yasmot.parser import show_frames
 
