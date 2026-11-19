@@ -109,12 +109,59 @@ def bbmatch(f1, f2, metric, scale, threshold=0.1):  # [BBox] x [BBox] -> [(BBox,
 from parse import parse
 from yasmot.definitions import BBox, Frame, g_trackno
 
-def assign(bbs, tracks, scale, metric, append_threshold=0.1):
+def _predict_single(bb_last, bb_prev, t_last, t_prev, cur_time):
+    """Constant-velocity linear extrapolation for a single BBox."""
+    dt_obs = t_last - t_prev
+    dt_pred = cur_time - t_last
+    if dt_obs <= 0 or dt_pred <= 0:
+        return bb_last
+    vx = (bb_last.x - bb_prev.x) / dt_obs
+    vy = (bb_last.y - bb_prev.y) / dt_obs
+    px = min(1.0, max(0.0, bb_last.x + vx * dt_pred))
+    py = min(1.0, max(0.0, bb_last.y + vy * dt_pred))
+    return BBox(
+        frameid=bb_last.frameid,
+        x=px,
+        y=py,
+        w=bb_last.w,
+        h=bb_last.h,
+        cls=bb_last.cls,
+        pr=bb_last.pr,
+    )
+
+
+def predict_track(trk, cur_time=None, time_fn=None):
+    """Predict a track's expected BBox (or stereo pair) at cur_time using constant velocity."""
+    last = trk.bblist[-1]
+    if cur_time is None or time_fn is None or len(trk.bblist) < 2:
+        return last
+
+    if type(last) is tuple:
+        lefts = [b[0] for b in trk.bblist if b[0] is not None]
+        rights = [b[1] for b in trk.bblist if b[1] is not None]
+        pred_l = (
+            _predict_single(lefts[-1], lefts[-2], time_fn(lefts[-1].frameid), time_fn(lefts[-2].frameid), cur_time)
+            if len(lefts) >= 2
+            else (lefts[-1] if lefts else None)
+        )
+        pred_r = (
+            _predict_single(rights[-1], rights[-2], time_fn(rights[-1].frameid), time_fn(rights[-2].frameid), cur_time)
+            if len(rights) >= 2
+            else (rights[-1] if rights else None)
+        )
+        return (pred_l, pred_r)
+
+    bb_prev = trk.bblist[-2]
+    return _predict_single(last, bb_prev, time_fn(last.frameid), time_fn(bb_prev.frameid), cur_time)
+
+
+def assign(bbs, tracks, scale, metric, append_threshold=0.1, cur_time=None, time_fn=None):
     """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
+        pred = predict_track(tracks[t], cur_time=cur_time, time_fn=time_fn)
         for b in range(len(bbs)):
-            s = metric(tracks[t].bblist[-1], bbs[b], scale)
+            s = metric(pred, bbs[b], scale)
             tmx[t, b] = s
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
@@ -144,14 +191,14 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1):
     return bbs_rest, tracks, unmatched_tracks
 
 
-def tmatch(bbs, tracks, time_pred, scale, metric):
+def tmatch(bbs, tracks, time_pred, scale, metric, cur_time=None, time_fn=None):
 
     # Partition all tracks by time_pred without assuming sorted order
     cur_tracks = [t for t in tracks if time_pred(t)]
     stale_tracks = [t for t in tracks if not time_pred(t)]
 
     # Match new bboxes to active tracks
-    bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric)
+    bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric, cur_time=cur_time, time_fn=time_fn)
 
     # Recombine: active tracks first, followed by stale tracks
     tracks[:] = matched + unmatched + stale_tracks
@@ -164,9 +211,8 @@ def tmatch(bbs, tracks, time_pred, scale, metric):
         g_trackno += 1
 
 
-def get_time_predicate(cur_frame, max_age, pattern, is_time=False):
-    """Check whether a track is still current by checking its last detection against the current frame"""
-
+def make_time_fn(pattern, is_time=False):
+    """Return a function mapping a frame ID string to a numeric frame number or timestamp."""
     def exframeno(frid):
         if is_time:
             try:
@@ -181,25 +227,48 @@ def get_time_predicate(cur_frame, max_age, pattern, is_time=False):
                 raise ValueError(f'Invalid frame number pattern "{pattern}", doesn\'t match frame label "{frid}".')
             else:
                 return int((t)[0])
+    return exframeno
+
+
+def get_time_predicate(cur_frame, max_age, pattern, is_time=False):
+    """Check whether a track is still current by checking its last detection against the current frame"""
+    exframeno = make_time_fn(pattern, is_time=is_time)
+    cur_val = exframeno(cur_frame)
 
     def time_predicate(trk):
         last = trk.bblist[-1]
-        return exframeno(frameid(last)) >= exframeno(cur_frame) - max_age
+        return exframeno(frameid(last)) >= cur_val - max_age
 
     return time_predicate
 
 
-def track(frames, metric=bbdist_track, scale=1.0, max_age=2, framelabel_pattern=None, timestamp=False):
+def track(frames, metric=bbdist_track, scale=1.0, max_age=2, framelabel_pattern=None, timestamp=False, velocity=True):
     tracks = []
+    if framelabel_pattern:
+        time_fn = make_time_fn(framelabel_pattern, is_time=timestamp)
+    else:
+        frame_indices = {f.frameid: idx for idx, f in enumerate(frames)}
+        def time_fn(frid): return frame_indices[frid]
+
     for i, f in enumerate(frames):
         # print(f'FrameID {f.frameid} boxes {len(f.bboxes)}')
         # def boxes(ts): return [b for t in ts for b in t.bbpairs]
         if f.bboxes:
             if framelabel_pattern:
-                time_pred = get_time_predicate(cur_frame=frameid(f.bboxes[0]), max_age=max_age, pattern=framelabel_pattern, is_time=timestamp)
+                cur_val = time_fn(frameid(f.bboxes[0]))
+                def time_pred(trk): return time_fn(frameid(trk.bblist[-1])) >= cur_val - max_age
             else:
-                def time_pred(trk): return frameid(trk.bblist[-1]) in [f.frameid for f in frames[max(0, i - max_age):i]]
-            tmatch(f.bboxes, tracks, time_pred, scale, metric)  # match bboxes to tracks (tmatch)
+                cur_val = i
+                def time_pred(trk): return frameid(trk.bblist[-1]) in [fr.frameid for fr in frames[max(0, i - max_age):i]]
+            tmatch(
+                f.bboxes,
+                tracks,
+                time_pred,
+                scale,
+                metric,
+                cur_time=cur_val if velocity else None,
+                time_fn=time_fn if velocity else None,
+            )  # match bboxes to tracks (tmatch)
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
     return tracks
 

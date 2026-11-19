@@ -51,6 +51,8 @@ def make_args_parser():
     parser.add_argument('--track', default='True', action=argparse.BooleanOptionalAction,
                         help="""Generate tracks from video frames or seuqential stills.""")
     parser.add_argument('--scale', default=1.0, type=float, help="""Size of the search space to link detections.""")
+    parser.add_argument('--velocity', default=True, action=argparse.BooleanOptionalAction,
+                        help="""Use constant-velocity prediction when matching tracks.""")
 
     # Allowing gaps in tracks
     parser.add_argument('--interpolate', default=False, action=argparse.BooleanOptionalAction, help="""Generate virtual detections by interpolating""")
@@ -134,6 +136,7 @@ def main():
             max_age=args.max_age,
             framelabel_pattern=args.framelabel_pattern,
             timestamp=args.timestamp,
+            velocity=args.velocity,
         )
         ts.sort(key=firstframe)
 

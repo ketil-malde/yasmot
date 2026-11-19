@@ -13,6 +13,8 @@ from yasmot.tracking import (
     summarize_probs,
     get_geometry,
     get_time_predicate,
+    make_time_fn,
+    predict_track,
     interpolate,
 )
 
@@ -47,5 +49,7 @@ __all__ = [
     "summarize_probs",
     "get_geometry",
     "get_time_predicate",
+    "make_time_fn",
+    "predict_track",
     "interpolate",
 ]
