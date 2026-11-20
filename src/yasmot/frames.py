@@ -17,25 +17,22 @@ def zip_frames(lists):
     """Merge lists of frames, assumed to be named in lexically increasing order"""
     cur = ''
     results = []
-    while not all([t == [] for t in lists]):
-        heads = [l[0] if l != [] else None for l in lists]
-        tails = [l[1:] if l != [] else [] for l in lists]
-        myframe = min([h.frameid for h in heads if h is not None])
+    idxs = [0] * len(lists)
+    while any(idxs[k] < len(lists[k]) for k in range(len(lists))):
+        heads = [lists[k][idxs[k]] if idxs[k] < len(lists[k]) else None for k in range(len(lists))]
+        myframe = min(h.frameid for h in heads if h is not None)
         if not (cur < myframe):
             raise ValueError('Error: frames not in lecially increasing order')
         cur = myframe
         res = []
 
-        for i in range(len(heads)):
-            if heads[i] is None:
-                res.append(Frame(frameid=myframe, bboxes=[]))
-            elif heads[i].frameid == myframe:
-                res.append(heads[i])
+        for k, h in enumerate(heads):
+            if h is not None and h.frameid == myframe:
+                res.append(h)
+                idxs[k] += 1
             else:
                 res.append(Frame(frameid=myframe, bboxes=[]))
-                tails[i].insert(0, heads[i])
         results.append(res)
-        lists = tails
     return results
 
 def consensus_frame(tup, scale=1.0, unknown_class=None):

@@ -1,4 +1,4 @@
-# from collections import namedtuple
+from functools import lru_cache
 from math import exp
 from datetime import datetime
 from scipy.optimize import linear_sum_assignment
@@ -63,17 +63,24 @@ def predict_track(trk, cur_time=None, time_fn=None):
         return last
 
     if type(last) is tuple:
-        lefts = [b[0] for b in trk.bblist if b[0] is not None]
-        rights = [b[1] for b in trk.bblist if b[1] is not None]
+        lefts = []
+        rights = []
+        for b in reversed(trk.bblist):
+            if b[0] is not None and len(lefts) < 2:
+                lefts.append(b[0])
+            if b[1] is not None and len(rights) < 2:
+                rights.append(b[1])
+            if len(lefts) == 2 and len(rights) == 2:
+                break
         pred_l = (
-            _predict_single(lefts[-1], lefts[-2], time_fn(lefts[-1].frameid), time_fn(lefts[-2].frameid), cur_time)
-            if len(lefts) >= 2
-            else (lefts[-1] if lefts else None)
+            _predict_single(lefts[0], lefts[1], time_fn(lefts[0].frameid), time_fn(lefts[1].frameid), cur_time)
+            if len(lefts) == 2
+            else (lefts[0] if lefts else None)
         )
         pred_r = (
-            _predict_single(rights[-1], rights[-2], time_fn(rights[-1].frameid), time_fn(rights[-2].frameid), cur_time)
-            if len(rights) >= 2
-            else (rights[-1] if rights else None)
+            _predict_single(rights[0], rights[1], time_fn(rights[0].frameid), time_fn(rights[1].frameid), cur_time)
+            if len(rights) == 2
+            else (rights[0] if rights else None)
         )
         return (pred_l, pred_r)
 
@@ -116,17 +123,22 @@ def assign(bbs, tracks, scale, metric, append_threshold=0.1, cur_time=None, time
     return bbs_rest, tracks, unmatched_tracks
 
 
-def tmatch(bbs, tracks, time_pred, scale, metric, cur_time=None, time_fn=None):
+def tmatch(bbs, tracks, time_pred, scale, metric, cur_time=None, time_fn=None, archive_stale=False):
 
-    # Partition all tracks by time_pred without assuming sorted order
-    cur_tracks = [t for t in tracks if time_pred(t)]
-    stale_tracks = [t for t in tracks if not time_pred(t)]
+    # Partition all tracks by time_pred in a single pass
+    cur_tracks = []
+    stale_tracks = []
+    for t in tracks:
+        if time_pred(t):
+            cur_tracks.append(t)
+        else:
+            stale_tracks.append(t)
 
     # Match new bboxes to active tracks
     bbs_rest, matched, unmatched = assign(bbs, cur_tracks, scale, metric, cur_time=cur_time, time_fn=time_fn)
 
-    # Recombine: active tracks first, followed by stale tracks
-    tracks[:] = matched + unmatched + stale_tracks
+    # Recombine: active tracks first (and optionally keep stale tracks in place)
+    tracks[:] = matched + unmatched if archive_stale else matched + unmatched + stale_tracks
 
     # Create new tracks for unmatched bboxes (i.e. bbs_rest).
     global g_trackno
@@ -135,9 +147,12 @@ def tmatch(bbs, tracks, time_pred, scale, metric, cur_time=None, time_fn=None):
         tracks.insert(0, Track(trackid=g_trackno, bblist=[bb]))
         g_trackno += 1
 
+    return stale_tracks
+
 
 def make_time_fn(pattern, is_time=False):
-    """Return a function mapping a frame ID string to a numeric frame number or timestamp."""
+    """Return a cached function mapping a frame ID string to a numeric frame number or timestamp."""
+    @lru_cache(maxsize=None)
     def exframeno(frid):
         if is_time:
             try:
@@ -168,7 +183,8 @@ def get_time_predicate(cur_frame, max_age, pattern, is_time=False):
 
 
 def track(frames, metric=bbdist_track, scale=1.0, max_age=2, framelabel_pattern=None, timestamp=False, velocity=True):
-    tracks = []
+    active_tracks = []
+    finished_tracks = []
     if framelabel_pattern:
         time_fn = make_time_fn(framelabel_pattern, is_time=timestamp)
     else:
@@ -181,21 +197,26 @@ def track(frames, metric=bbdist_track, scale=1.0, max_age=2, framelabel_pattern=
         if f.bboxes:
             if framelabel_pattern:
                 cur_val = time_fn(frameid(f.bboxes[0]))
-                def time_pred(trk): return time_fn(frameid(trk.bblist[-1])) >= cur_val - max_age
+                cutoff = cur_val - max_age
+                def time_pred(trk): return time_fn(frameid(trk.bblist[-1])) >= cutoff
             else:
                 cur_val = i
-                def time_pred(trk): return frameid(trk.bblist[-1]) in [fr.frameid for fr in frames[max(0, i - max_age):i]]
-            tmatch(
+                valid_fids = {fr.frameid for fr in frames[max(0, i - max_age):i]}
+                def time_pred(trk): return frameid(trk.bblist[-1]) in valid_fids
+            stale = tmatch(
                 f.bboxes,
-                tracks,
+                active_tracks,
                 time_pred,
                 scale,
                 metric,
                 cur_time=cur_val if velocity else None,
                 time_fn=time_fn if velocity else None,
+                archive_stale=True,
             )  # match bboxes to tracks (tmatch)
+            if stale:
+                finished_tracks.extend(reversed(stale))
         # print(f' --- Tracked boxes: {len(boxes(tracks))}, {len(boxes(old_tracks))}')
-    return tracks
+    return active_tracks + list(reversed(finished_tracks))
 
 
 from math import log
