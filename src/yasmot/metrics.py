@@ -122,7 +122,7 @@ def bbdist_pair(bbsA, bbsB, scale, occA=None, occB=None, sigma_d=0.05):
     depth_factor = 0.6 + 0.4 * exp(-((dispA - dispB) ** 2) / (sigma_d ** 2))
     return base * depth_factor
 
-def bbdist_stereo(bb1, bb2, scale, occ1=None, occ2=None, disp_mean=0.05, disp_min=-0.02):
+def bbdist_stereo(bb1, bb2, scale, occ1=None, occ2=None, disp_mean=0.10, disp_sigma=0.15):
     """Calculate similarity between bboxes in left and right stereo frames."""
     x1, y1, w1, h1 = bb1.x, bb1.y, bb1.w, bb1.h
     x2, y2, w2, h2 = bb2.x, bb2.y, bb2.w, bb2.h
@@ -133,8 +133,6 @@ def bbdist_stereo(bb1, bb2, scale, occ1=None, occ2=None, disp_mean=0.05, disp_mi
     clip_hy = (occ1[3] if occ1 else False) or (occ2[3] if occ2 else False)
 
     disp, dw = axis_delta(x1, w1, x2, w2, clip_low=clip_lx, clip_high=clip_hx)
-    if disp < disp_min:
-        return 0.0
     dy, dh = axis_delta(y1, h1, y2, h2, clip_low=clip_ly, clip_high=clip_hy)
 
     wsq, hsq = w1 * w2 * scale, h1 * h2 * scale
@@ -145,8 +143,9 @@ def bbdist_stereo(bb1, bb2, scale, occ1=None, occ2=None, disp_mean=0.05, disp_mi
 
     # difference in y direction should be very small, multiply by 3
     ypscore = exp(-dy**2 / hsq * 3)
-    # x1 should be right of x2, difference can be substantial and independent of bbox size
-    xpscore = exp(-2 * (disp - disp_mean)**2)
+    # x1 should be right of x2; wide Gaussian centered at disp_mean allows jitter near 0
+    # while naturally suppressing negative or implausibly large disparities
+    xpscore = exp(-((disp - disp_mean)**2) / (disp_sigma**2))
 
     pscore = 0.4 + min(0.6, bb1.pr, bb2.pr)
 
