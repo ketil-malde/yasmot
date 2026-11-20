@@ -1,7 +1,7 @@
 from yasmot.definitions import BBox, Frame, BBpair, Track, bbshow, getcls, frameid, setid
 from yasmot.parser import read_frames, write_frames, show_frames, parse_yolodir, parse_retina, tobbx_yolo, tobbx_retina
 from yasmot.frames import get_frames, merge_frames, zip_frames, consensus_frame
-from yasmot.metrics import bbdist_track, bbdist_stereo, bbdist_pair, get_geometry
+from yasmot.metrics import bbdist_track, bbdist_stereo, bbdist_pair, get_geometry, axis_delta, stereo_disparity, find_occlusions
 from yasmot.tracking import (
     track,
     tmatch,

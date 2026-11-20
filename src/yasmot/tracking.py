@@ -82,13 +82,12 @@ def predict_track(trk, cur_time=None, time_fn=None):
 
 
 def assign(bbs, tracks, scale, metric, append_threshold=0.1, cur_time=None, time_fn=None):
-    """Assign bbs'es to tracks (which are modifies), return remaining bbs'es"""
+    """Assign bbs'es to tracks (which are modified), return remaining bbs'es"""
     tmx = np.empty((len(tracks), len(bbs)))
     for t in range(len(tracks)):
         pred = predict_track(tracks[t], cur_time=cur_time, time_fn=time_fn)
         for b in range(len(bbs)):
-            s = metric(pred, bbs[b], scale)
-            tmx[t, b] = s
+            tmx[t, b] = metric(pred, bbs[b], scale)
     tind, bind = linear_sum_assignment(tmx, maximize=True)
 
     ##################################################
